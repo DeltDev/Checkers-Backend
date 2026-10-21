@@ -1,0 +1,197 @@
+
+classDiagram
+    IPiece <.. GameController
+    Position <.. GameController
+
+    Square o-- IPiece : occupies
+    Piece ..|> IPiece
+
+    Board *-- ISquare : contains
+    Board ..|> IBoard
+    Square ..|> ISquare
+
+    Move o-- IPiece : captures
+    Move <.. MoveType
+    Move <.. Position
+    Move <.. PieceColor
+
+    Piece <.. PieceColor
+    Piece <.. PieceType
+    Player <.. PieceColor
+    Square <.. SquareNumber
+    GameController <.. PieceColor
+    GameController <.. GameStatus
+    GameController <.. Position
+
+    GameController *-- IBoard
+    GameController *-- Move : records
+    GameController o-- IPlayer
+    GameController o-- IPiece
+    Player ..|> IPlayer
+
+    class Piece {
+      +int Id : readonly
+      +PieceColor Color : readonly
+      +PieceType Type : readonly
+
+      +Piece(int id, PieceColor color, PieceType type)
+      +Piece(Piece other)
+
+      +Copy() : Piece
+    }
+
+    class IPiece {
+      <<interface>>
+      +int Id : readonly
+      +PieceColor Color : readonly
+      +PieceType Type : readonly
+    }
+
+    class PieceColor {
+      <<Enumeration>>
+      White,
+      Black,
+    }
+
+    class PieceType {
+      <<Enumeration>>
+      Man,
+      King,
+    }
+
+    class SquareNumber {
+      <<Enumeration>>
+      Square1 = 1,
+      Square2,
+      Square3,
+      ...
+    }
+
+    class Position {
+      <<struct>>
+      +int Row : readonly
+      +int Col : readonly
+
+      +Position(int row, int col)
+    }
+
+    class Square {
+      +Position Position : readonly
+      +SquareNumber Number : readonly
+      +bool IsDark : readonly
+      +IPiece? Occupant
+
+      +Square(Position position, SquareNumber number, bool isDark)
+    }
+
+    class ISquare {
+      <<interface>>
+      +Position Position : readonly
+      +SquareNumber Number : readonly
+      +bool IsDark : readonly
+      +IPiece? Occupant
+    }
+
+    class Board {
+      +int Size = 10$
+      +int PlayableSquares = 50$
+
+      +ISquare[,] Squares : readonly
+
+      +Board()
+
+      +AllPositions() : IEnumerable~Position~$
+    }
+
+    class IBoard {
+      <<interface>>
+      +ISquare[,] Squares : readonly
+    }
+
+    class MoveType {
+      <<Enumeration>>
+      Quiet,
+      Capture,
+    }
+
+    class Move {
+      <<struct>>
+      +Position From : readonly
+      +Position To : readonly
+      +Position[] Path : readonly
+      +IPiece[] Captured : readonly
+      +MoveType Type : readonly
+      +PieceColor Color : readonly
+
+      +Move(Position from, Position to, Position[] path, IPiece[] captured, MoveType type, PieceColor color)
+
+      +IsCapture() : bool
+      +IsPromotion() : bool
+      +ToNotation() : string
+    }
+
+    class Player {
+      +int Id : readonly
+      +string Name : readonly
+      +PieceColor Color : readonly
+
+      +Player(int id, string name, PieceColor color)
+    }
+
+    class IPlayer {
+      <<interface>>
+      +int Id : readonly
+      +string Name : readonly
+      +PieceColor Color : readonly
+    }
+
+    class GameStatus {
+      <<Enumeration>>
+      Ongoing,
+      WhiteWon,
+      BlackWon,
+      Draw,
+    }
+
+    class GameController {
+      +int MaxKingOnlyStreak = 25$
+
+      -List~IPlayer~ _players
+      -Dictionary<.string, int> _positionCounts
+      -int _kingOnlyStreak
+      -int _endgameStreak
+      -Dictionary<.int, bool> _drawOffers : key = IPlayer.Id
+
+      +int Turn
+      +PieceColor TurnColor
+      +GameStatus Status
+      +IBoard Board : readonly, private set
+      +List~Move~ History : readonly, private set
+      +List~IPlayer~ DrawOfferedBy : readonly
+
+      +Action~int~? OnTurnChanged
+      +Action<.IPlayer, Move>? OnMoveMade
+      +Action~GameStatus~? OnGameEnded
+
+      +GameController(IPlayer white, IPlayer black)
+
+      %% mutations
+      +Reset() : void
+      +MakeMove(IPlayer player, Move move) : bool
+      +PlacePiece(Position pos, IPiece piece) : bool
+      +RemovePiece(Position pos) : IPiece?
+      +Resign(IPlayer player) : void
+      +OfferDraw(IPlayer player) : bool
+      %% getters
+      +GetLegalMoves(IPlayer player) : List~Move~
+      +GetSquares() : ISquare[,]
+      +GetPlayers() : List~IPlayer~
+      +GetSquare(Position pos) : ISquare?
+      +GetWinner() : IPlayer?
+      +IsPlayable(Position p) : bool$
+      +IsSquareEmpty(Position pos) : bool
+      -HasPlayer(IPlayer player) : bool
+      %% helpers
+      +ToSquareNumber(Position p) : SquareNumber$
+      +FromSquareNumber(SquareNumber n) : Position?$
+    }
