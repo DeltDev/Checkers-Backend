@@ -21,16 +21,51 @@ public struct Move
 
     public bool IsCapture()
     {
-        throw new NotImplementedException();
+        return Type == MoveType.Capture;
     }
 
     public bool IsPromotion()
     {
-        throw new NotImplementedException();
+        if (Type != MoveType.Capture)
+        {
+            if (Color == PieceColor.White)
+            {
+                return To.Row == 0;
+            } 
+            if(Color == PieceColor.Black)
+            {
+                return To.Row == 9;
+            }
+        }
+        return false;
     }
 
     public string ToNotation()
     {
-        throw new NotImplementedException();
+        
+        if (Type == MoveType.Capture)
+        {
+            //asumsi masih 1 gerakan, path belum diimplementasi
+            SquareNumber fromSquareNumber, toSquareNumber;
+
+            Board board = new Board();
+            
+            fromSquareNumber = board.Squares[From.Row, From.Col].Number!.Value;
+            toSquareNumber = board.Squares[To.Row, To.Col].Number!.Value;
+
+            return $"[{(int)fromSquareNumber}]x[{(int)toSquareNumber}]";
+        }
+        else
+        {
+            SquareNumber fromSquareNumber, toSquareNumber;
+
+            Board board = new Board();
+            
+            fromSquareNumber = board.Squares[From.Row, From.Col].Number!.Value;
+            toSquareNumber = board.Squares[To.Row, To.Col].Number!.Value;
+
+            return $"[{(int)fromSquareNumber}]:[{(int)toSquareNumber}]";
+        }
     }
+    
 }
