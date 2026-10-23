@@ -101,7 +101,7 @@ public class GameController
     // helpers
     public static SquareNumber ToSquareNumber(Position p)
     {
-        throw new NotImplementedException();
+        return (SquareNumber)(p.Row * (Models.Board.Size / 2) + p.Col / 2 + 1);
     }
 
     public static Position? FromSquareNumber(SquareNumber n)

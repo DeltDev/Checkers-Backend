@@ -8,15 +8,17 @@ public struct Move
     public IPiece[] Captured { get; }
     public MoveType Type { get; }
     public PieceColor Color { get; }
+    public PieceType PieceType { get; }
 
-    public Move(Position from, Position to, Position[] path, IPiece[] captured, MoveType type, PieceColor color)
+    public Move(Position from, Position to, Position[]? path, IPiece[]? captured, MoveType type, PieceColor color, PieceType pieceType)
     {
         From = from;
         To = to;
-        Path = path;
-        Captured = captured;
+        Path = path?.ToArray() ?? Array.Empty<Position>();
+        Captured = captured?.ToArray() ?? Array.Empty<IPiece>();
         Type = type;
         Color = color;
+        PieceType = pieceType;
     }
 
     public bool IsCapture()
@@ -26,46 +28,49 @@ public struct Move
 
     public bool IsPromotion()
     {
-        if (Type != MoveType.Capture)
+
+        if (PieceType != PieceType.Man)
         {
-            if (Color == PieceColor.White)
-            {
-                return To.Row == 0;
-            } 
-            if(Color == PieceColor.Black)
-            {
-                return To.Row == 9;
-            }
+            return false;
+        }
+
+        if (Color == PieceColor.White)
+        {
+            return To.Row == 0;
+        }
+
+        if (Color == PieceColor.Black)
+        {
+            return To.Row == Board.Size-1;
         }
         return false;
     }
 
     public string ToNotation()
     {
+        bool isCapture = IsCapture();
+        string separator = isCapture ? "x" : ":";
+
+        List<int> outputSquares = new(){(int) GameController.ToSquareNumber(From)};
+
+        if (isCapture)
+        {
+            foreach (Position step in Path)
+            {
+                if (step == From || step == To)
+                {
+                    continue;
+                }
+                outputSquares.Add((int) GameController.ToSquareNumber(step));
+            }
+            
+            
+        }
         
-        if (Type == MoveType.Capture)
-        {
-            //asumsi masih 1 gerakan, path belum diimplementasi
-            SquareNumber fromSquareNumber, toSquareNumber;
-
-            Board board = new Board();
+        outputSquares.Add((int) GameController.ToSquareNumber(To));
             
-            fromSquareNumber = board.Squares[From.Row, From.Col].Number!.Value;
-            toSquareNumber = board.Squares[To.Row, To.Col].Number!.Value;
+        return string.Join(separator, outputSquares.Select(number => $"[{number}]"));
 
-            return $"[{(int)fromSquareNumber}]x[{(int)toSquareNumber}]";
-        }
-        else
-        {
-            SquareNumber fromSquareNumber, toSquareNumber;
-
-            Board board = new Board();
-            
-            fromSquareNumber = board.Squares[From.Row, From.Col].Number!.Value;
-            toSquareNumber = board.Squares[To.Row, To.Col].Number!.Value;
-
-            return $"[{(int)fromSquareNumber}]:[{(int)toSquareNumber}]";
-        }
     }
     
 }
