@@ -4,6 +4,9 @@ namespace Checkers.Contracts.Responses;
 
 public class GameStateResponse
 {
+    // Phase 7 pre-req (plan): filled by the controller in Phase 8, not by GameStateMapper.
+    public string GameId { get; set; } = string.Empty;
+
     public int Turn { get; set; }
 
     public PieceColor TurnColor { get; set; }

@@ -16,3 +16,9 @@ app.MapGet("/", () => "Hello World!");
 app.MapControllers();
 
 app.Run();
+
+// Exposes the top-level Program entry point to WebApplicationFactory<TEntryPoint>
+// in the test project (Phase 9 verification via in-memory HTTP).
+public partial class Program
+{
+}

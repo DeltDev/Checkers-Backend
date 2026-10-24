@@ -73,7 +73,43 @@ public class GameController
 
     public bool MakeMove(IPlayer player, Move move)
     {
-        throw new NotImplementedException();
+        if (Status != GameStatus.Ongoing)
+        {
+            return false;
+        }
+
+        if (player == null || !HasPlayer(player))
+        {
+            return false;
+        }
+
+        if (player.Color != TurnColor)
+        {
+            return false;
+        }
+
+        List<Move> legalMoves = GetLegalMoves(player);
+        Move? canonicalMove = FindLegalMove(legalMoves, move);
+
+        if (canonicalMove == null)
+        {
+            return false;
+        }
+
+        ApplyMove(canonicalMove.Value);
+        UpdateBookkeeping(player, canonicalMove.Value);
+
+        // [Phase 5 hook] CheckEndConditions() - wire in Phase 5 (it reads the
+        // counts and streak that UpdateBookkeeping just maintained).
+
+
+        RaiseOnMoveMade(player, canonicalMove.Value);
+        RaiseOnTurnChanged(Turn);
+
+        // [Phase 5 hook] IF Status is no longer Ongoing:
+        //     RaiseOnGameEnded(Status);
+
+        return true;
     }
 
     public bool PlacePiece(Position pos, IPiece piece)
@@ -174,7 +210,7 @@ public class GameController
         return square is not null && square.Occupant is null;
     }
 
-    private bool HasPlayer(IPlayer player)
+    private bool HasPlayer(IPlayer? player)
     {
         return player is not null && _players.Exists(p => p.Id == player.Id);
     }
@@ -419,6 +455,172 @@ public class GameController
             }
 
             square = new Position(square.Row + rowStep, square.Col + colStep);
+        }
+    }
+
+    
+    //cari apakah move yang direquest legal atau bukan
+    private Move? FindLegalMove(List<Move> legalMoves, Move reqMove)
+    {
+
+
+        foreach (Move candidate in legalMoves)
+        {
+            if (candidate.From != reqMove.From)
+            {
+                continue;
+            }
+
+            if (candidate.To != reqMove.To)
+            {
+                continue;
+            }
+
+
+            if (reqMove.Path.Length > 0 && !candidate.Path.SequenceEqual(reqMove.Path))
+            {
+                continue;
+            }
+
+            return candidate;
+        }
+
+        return null;
+    }
+
+    private void ApplyMove(Move move)
+    {
+
+        IPiece? movingPiece = GetSquare(move.From)!.Occupant;
+
+        IPiece? removedPiece = RemovePiece(move.From);
+
+        if (move.Type == MoveType.Capture)
+        {
+           
+            Position victimPosition = default;
+            foreach (IPiece victim in move.Captured)
+            {
+
+                foreach (ISquare square in Board.Squares)
+                {
+
+                    if (square.Occupant != null && square.Occupant.Id == victim.Id) 
+                    {
+                        victimPosition = square.Position;
+                        break;
+                    }
+                }
+                
+                RemovePiece(victimPosition);
+            }
+        }
+
+        IPiece? placed;
+        if (move.IsPromotion())
+        {
+            placed = new Piece(movingPiece.Id, movingPiece.Color, PieceType.King);
+        }
+        else
+        {
+            placed = movingPiece;
+        }
+
+        bool _ = PlacePiece(move.To, placed!);
+    }
+
+    private void UpdateBookkeeping(IPlayer player, Move move)
+    {
+        History.Add(move);
+        Turn++;
+        TurnColor = TurnColor == PieceColor.Black ? PieceColor.White : PieceColor.Black;
+
+        string key = BuildPositionKey();
+        
+        _positionCounts[key] = _positionCounts.GetValueOrDefault(key) + 1;
+
+        if (move.Type == MoveType.Capture || move.PieceType == PieceType.Man)
+        {
+            _kingOnlyStreak = 0;
+        }
+        else
+        {
+            _kingOnlyStreak++;
+        }
+        
+        DrawOfferedBy.Clear();
+        _drawOffers.Clear();
+    }
+
+    private string BuildPositionKey()
+    {
+        List<string> parts = new List<string>();
+        
+        IPiece? Occupant;
+        foreach (Position p in Models.Board.AllPositions())
+        {
+            if (!IsPlayable(p))
+            {
+                continue;
+            }
+
+            Occupant = Board.Squares[p.Row, p.Col].Occupant;
+            if (Occupant == null)
+            {
+                parts.Add("e");
+            }
+            else
+            {
+                parts.Add(Occupant.Id.ToString());
+            }
+        }
+
+        
+        parts.Add(TurnColor.ToString());
+
+        return string.Join("|", parts);
+    }
+
+    private void RaiseOnMoveMade(IPlayer player, Move move)
+    {
+        Action<IPlayer, Move>? handlers = OnMoveMade;
+        if (handlers is null)
+        {
+            return;
+        }
+
+        foreach (Action<IPlayer, Move> handler in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(player, move);
+            }
+            catch
+            {
+                // Per-subscriber try/catch: a broken handler must not fail the
+                // move (state is committed) nor skip later subscribers.
+            }
+        }
+    }
+
+    private void RaiseOnTurnChanged(int turn)
+    {
+        Action<int>? handlers = OnTurnChanged;
+        if (handlers is null)
+        {
+            return;
+        }
+
+        foreach (Action<int> handler in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(turn);
+            }
+            catch
+            {
+                // See RaiseOnMoveMade.
+            }
         }
     }
 }
