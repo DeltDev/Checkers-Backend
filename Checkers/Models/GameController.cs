@@ -4,6 +4,13 @@ namespace Checkers.Models;
 
 public class GameController
 {
+    private int [][] diagonalPairs =
+    {
+        new int[] {1,-1},
+        new int[] {1,1},
+        new int[] {-1,1},
+        new int[] {-1,-1}
+    };
     public static int MaxKingOnlyStreak = 25;
 
     private List<IPlayer> _players = new();
@@ -114,7 +121,12 @@ public class GameController
     // getters
     public List<Move> GetLegalMoves(IPlayer player)
     {
-        throw new NotImplementedException();
+        if (!HasPlayer(player) || Status != GameStatus.Ongoing || player.Color != TurnColor)
+        {
+            return new List<Move>();
+        }
+
+        return Generate(Board, player.Color);
     }
 
     public ISquare[,] GetSquares()
@@ -187,5 +199,226 @@ public class GameController
         int col = (indexInRow * 2) + (row % 2 == 0 ? 1 : 0);
 
         return new Position(row, col);
+    }
+    
+    private List<Move> Generate(IBoard board, PieceColor pieceColor)
+    {
+        List<Move> captures = GenerateCaptureMoves(board, pieceColor);
+
+        if (captures.Count > 0)
+        {
+            int maxCount = 0;
+            foreach (Move move in captures)
+            {
+                maxCount = Math.Max(maxCount, move.Captured.Length);
+            }
+            return captures.Where(capture => capture.Captured.Length == maxCount).ToList();
+        }
+
+        return GenerateQuietMoves(board, pieceColor);
+    }
+
+    private  List<Move> GenerateQuietMoves(IBoard board, PieceColor pieceColor)
+    {
+        List<Move> moves = new();
+
+        foreach (Position p in Models.Board.AllPositions())
+        {
+            if (!IsPlayable(p))
+            {
+                continue;
+            }
+            
+            IPiece? piece = board.Squares[p.Row, p.Col].Occupant;
+
+            if (piece == null || piece.Color != pieceColor)
+            {
+                continue;
+            }
+
+            if (piece.Type == PieceType.Man)
+            {
+                int rowStep = piece.Color == PieceColor.White ? -1 : 1;
+
+                foreach (int colStep in (int[])[-1,1])
+                {
+                    Position to = new Position(p.Row + rowStep, p.Col + colStep);
+
+                    if (IsPlayable(to) && board.Squares[to.Row, to.Col].Occupant is null)
+                    {
+                        moves.Add(new Move(p,to,null,null,MoveType.Quiet, pieceColor, piece.Type));
+                    }
+                }
+            }
+            else
+            {
+                foreach (int[] diagonalPair in diagonalPairs)
+                {
+                    Position q = new Position(p.Row + diagonalPair[0], p.Col + diagonalPair[1]);
+
+                    while (IsPlayable(q) && board.Squares[q.Row, q.Col].Occupant is null)
+                    {
+                        moves.Add(new Move(p,q,null,null,MoveType.Quiet, pieceColor, piece.Type));
+                        q = new Position(q.Row + diagonalPair[0], q.Col + diagonalPair[1]);
+                    }
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    private List<Move> GenerateCaptureMoves(IBoard board, PieceColor pieceColor)
+    {
+        List<Move> result = new();
+        IPiece?[,] pieces = ClonePieces(board);
+        bool[,] flags = new bool[Models.Board.Size, Models.Board.Size];
+
+        foreach (Position p in Models.Board.AllPositions())
+        {
+            if (!IsPlayable(p))
+            {
+                continue;
+            }
+
+            IPiece? piece = pieces[p.Row, p.Col];
+
+            if (piece is null || piece.Color != pieceColor)
+            {
+                continue;
+            }
+
+
+            SearchCaptures(pieces, flags, p, p, piece, new List<Position>(), new List<IPiece>(), result);
+        }
+
+        return result;
+    }
+
+    private static IPiece?[,] ClonePieces(IBoard board)
+    {
+        IPiece? [,] result = new IPiece?[Models.Board.Size, Models.Board.Size];
+        for (int i = 0; i < Models.Board.Size; i++)
+        {
+            for (int j = 0; j < Models.Board.Size; j++)
+            {
+                result[i, j] = board.Squares[i, j].Occupant;
+            }
+        }
+
+        return result;
+    }
+
+    private void SearchCaptures(IPiece?[,] pieces, bool[,] flags, Position from, Position current,
+        IPiece piece, List<Position> landings, List<IPiece> captured, List<Move> result)
+    {
+        List<(Position Victim, Position Landing)> jumps = GetJumps(pieces, flags, current, piece);
+
+        foreach ((Position victim, Position landing) in jumps)
+        {
+
+            pieces[current.Row, current.Col] = null;
+            pieces[landing.Row, landing.Col] = piece;
+            flags[victim.Row, victim.Col] = true; 
+            captured.Add(pieces[victim.Row, victim.Col]!);
+            landings.Add(landing);
+
+
+            SearchCaptures(pieces, flags, from, landing, piece, landings, captured, result);
+
+            captured.RemoveAt(captured.Count - 1);
+            landings.RemoveAt(landings.Count - 1);
+            flags[victim.Row, victim.Col] = false;
+            pieces[landing.Row, landing.Col] = null;
+            pieces[current.Row, current.Col] = piece;
+        }
+
+        if (jumps.Count == 0 && captured.Count > 0)
+        {
+            Position to = landings[^1];
+            Position[] path = landings.Take(landings.Count - 1).ToArray();
+
+
+            result.Add(new Move(from, to, path, captured.ToArray(), MoveType.Capture, piece.Color, piece.Type));
+        }
+    }
+
+    private List<(Position Victim, Position Landing)> GetJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece)
+    {
+        List<(Position Victim, Position Landing)> jumps = new();
+
+        foreach (int[] diagonalPair in diagonalPairs)
+        {
+            int rowStep = diagonalPair[0];
+            int colStep = diagonalPair[1];
+
+            if (piece.Type == PieceType.Man)
+            {
+                AddManJumps(pieces, flags, current, piece, rowStep, colStep, jumps);
+            }
+            else
+            {
+                AddKingJumps(pieces, flags, current, piece, rowStep, colStep, jumps);
+            }
+        }
+
+        return jumps;
+    }
+
+    private static void AddManJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece,
+        int rowStep, int colStep, List<(Position Victim, Position Landing)> jumps)
+    {
+        Position victim = new Position(current.Row + rowStep, current.Col + colStep);
+        Position landing = new Position(current.Row + (2 * rowStep), current.Col + (2 * colStep));
+
+        if (!IsPlayable(victim) || !IsPlayable(landing))
+        {
+            return;
+        }
+
+        IPiece? target = pieces[victim.Row, victim.Col];
+
+        if (target is null || target.Color == piece.Color || flags[victim.Row, victim.Col])
+        {
+            return;
+        }
+
+        if (pieces[landing.Row, landing.Col] is not null)
+        {
+            return;
+        }
+
+        jumps.Add((victim, landing));
+    }
+
+    private static void AddKingJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece,
+        int rowStep, int colStep, List<(Position Victim, Position Landing)> jumps)
+    {
+        Position square = new Position(current.Row + rowStep, current.Col + colStep);
+
+        while (IsPlayable(square))
+        {
+            IPiece? occupant = pieces[square.Row, square.Col];
+
+            if (occupant is not null)
+            {
+                if (occupant.Color == piece.Color || flags[square.Row, square.Col])
+                {
+                    return;
+                }
+
+                Position landing = new Position(square.Row + rowStep, square.Col + colStep);
+
+                while (IsPlayable(landing) && pieces[landing.Row, landing.Col] is null)
+                {
+                    jumps.Add((square, landing));
+                    landing = new Position(landing.Row + rowStep, landing.Col + colStep);
+                }
+
+                return;
+            }
+
+            square = new Position(square.Row + rowStep, square.Col + colStep);
+        }
     }
 }
