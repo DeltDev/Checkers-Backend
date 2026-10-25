@@ -12,7 +12,8 @@ public static class GameStateMapper
             Turn = game.Turn,
             TurnColor = game.TurnColor,
             Status = game.Status,
-            WinnerId = game.GetWinner()?.Id
+            WinnerId = game.GetWinner()?.Id,
+          
         };
 
         foreach (IPlayer player in game.GetPlayers())
@@ -43,6 +44,7 @@ public static class GameStateMapper
         {
             From = move.From,
             To = move.To,
+            Path = move.Path,
             CapturedPieceIds = move.Captured.Select(victim => victim.Id).ToArray(),
             Type = move.Type,
             Color = move.Color,
@@ -52,11 +54,11 @@ public static class GameStateMapper
 
     public static PlayerResponse ToResponse(this IPlayer player)
     {
-        return new PlayerResponse()
+        return new PlayerResponse
         {
             Id = player.Id,
+            Name = player.Name,
             Color = player.Color,
-            Name = player.Name
         };
     }
 
@@ -65,14 +67,13 @@ public static class GameStateMapper
         SquareResponse response = new()
         {
             Position = square.Position,
-            Number = square.Number, 
+            Number = square.Number,
             IsDark = square.IsDark,
         };
 
         IPiece? occupant = square.Occupant;
         if (occupant is not null)
         {
-            
             response.OccupantId = occupant.Id;
             response.OccupantColor = occupant.Color;
             response.OccupantType = occupant.Type;
@@ -81,3 +82,4 @@ public static class GameStateMapper
         return response;
     }
 }
+

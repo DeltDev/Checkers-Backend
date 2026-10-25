@@ -1,0 +1,37 @@
+# =============================================================================
+# Runs the whole Checkers stack: the ASP.NET API + the Vite/React frontend
+# served by nginx (nginx proxies /api and /health back to the backend container,
+# so the browser only ever talks to one origin).
+#
+#   docker compose up --build
+#     API       -> http://localhost:5099  (direct, has CORS for local Vite)
+#     Frontend  -> http://localhost:8080  (what you actually open)
+#
+# Compose lives in Checkers-Backend, so the frontend build context is the
+# sibling folder (../Checkers-Frontend).
+# =============================================================================
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: checkers-backend
+    container_name: checkers-backend
+    ports:
+      - "5099:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../Checkers-Frontend
+      dockerfile: Dockerfile
+    image: checkers-frontend
+    container_name: checkers-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

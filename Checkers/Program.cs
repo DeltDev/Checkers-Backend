@@ -6,16 +6,36 @@ using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers().AddJsonOptions(
-    options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 builder.Services.AddSingleton<IGameIdGenerator, GameIdGenerator>();
 builder.Services.AddSingleton<IGameStore, InMemoryGameStore>();
 builder.Services.AddSingleton<IGameFactory, GameFactory>();
 builder.Services.AddSingleton<IGameService, GameService>();
+
+const string CorsPolicy = "Frontend";
+string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicy, policy =>
+    {
+        if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
+        {
+            policy.SetIsOriginAllowed(_ => true); 
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins);
+        }
+
+        policy.AllowAnyHeader().AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -36,7 +56,10 @@ app.UseExceptionHandler(errorApp =>
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
     });
 });
-app.MapGet("/health", () => "API ready!");
+
+app.UseCors(CorsPolicy);
+
+app.MapGet("/health", () => "ok");
 
 app.MapControllers();
 
@@ -45,3 +68,4 @@ app.Run();
 public partial class Program
 {
 }
+

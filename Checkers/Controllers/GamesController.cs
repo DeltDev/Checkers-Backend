@@ -1,12 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using System.Runtime.InteropServices.JavaScript;
 using Checkers.Contracts.Requests;
 using Checkers.Contracts.Responses;
 using Checkers.Mapping;
 using Checkers.Models;
 using Checkers.Services;
 using Microsoft.AspNetCore.Mvc;
-
 
 namespace Checkers.Controllers;
 
@@ -25,16 +23,17 @@ public class GamesController : ControllerBase
     public ActionResult<GameStateResponse> CreateGame([FromBody] CreateGameRequest request)
     {
         string gameId = _gameService.CreateGame(request.WhitePlayerName, request.BlackPlayerName);
+
         GameController? game = _gameService.GetGame(gameId);
         if (game is null)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError,Error("game not found after creation"));
+            
+            return StatusCode(StatusCodes.Status500InternalServerError, Error("game not found after creation"));
         }
 
         GameStateResponse response = game.ToResponse();
-        response.GameId = gameId;
-        return Created($"/api/games/{gameId}", response);
-        
+        response.GameId = gameId; 
+        return Created($"/api/games/{gameId}", response); 
     }
 
     [HttpGet("{gameId}")]
@@ -43,9 +42,9 @@ public class GamesController : ControllerBase
         GameController? game = TryGetGame(gameId);
         if (game is null)
         {
-            return NotFound(Error("Game not found"));
+            return NotFound(Error("game not found")); 
         }
-        
+
         GameStateResponse response = game.ToResponse();
         response.GameId = gameId;
         return Ok(response);
@@ -62,14 +61,15 @@ public class GamesController : ControllerBase
 
         if (playerId is null)
         {
-            return BadRequest(Error("playerId query parameter is required")); 
+            return BadRequest(Error("playerId query parameter is required"));
         }
 
         IPlayer? player = TryFindPlayer(game, playerId.Value);
         if (player is null)
         {
-            return NotFound(Error("player not in this game"));
+            return NotFound(Error("player not in this game")); 
         }
+
 
         LegalMovesResponse result = new();
         foreach (Move move in game.GetLegalMoves(player))
@@ -78,7 +78,6 @@ public class GamesController : ControllerBase
         }
 
         return Ok(result);
-
     }
 
     [HttpPost("{gameId}/moves")]
@@ -87,14 +86,15 @@ public class GamesController : ControllerBase
         GameController? game = TryGetGame(gameId);
         if (game is null)
         {
-            return NotFound(Error("Game not found"));
+            return NotFound(Error("game not found"));
         }
 
         IPlayer? player = TryFindPlayer(game, request.PlayerId);
         if (player is null)
         {
-            return NotFound(Error("Player is not in this game"));
+            return NotFound(Error("player not in this game"));
         }
+
         Move requested = new(
             request.From,
             request.To,
@@ -106,7 +106,7 @@ public class GamesController : ControllerBase
 
         if (!game.MakeMove(player, requested))
         {
-            return Conflict(DecideRejection(game, player)); // D6: 409, never 500
+            return Conflict(DecideRejection(game, player));
         }
 
         return Ok(new ActionResultResponse
@@ -133,10 +133,12 @@ public class GamesController : ControllerBase
         }
 
         bool accepted = game.OfferDraw(player);
+
+     
         return Ok(new ActionResultResponse
         {
             Success = accepted,
-            Message = accepted ? "Draw accepted" : "Draw offer rejected",
+            Message = accepted ? null : "draw offer rejected (finished game or duplicate)",
             Status = game.Status,
         });
     }
@@ -144,9 +146,37 @@ public class GamesController : ControllerBase
     [HttpPost("{gameId}/resign")]
     public ActionResult<ActionResultResponse> Resign(string gameId, [FromBody] ResignRequest request)
     {
-        throw new NotImplementedException();
+        GameController? game = TryGetGame(gameId);
+        if (game is null)
+        {
+            return NotFound(Error("game not found"));
+        }
+
+        IPlayer? player = TryFindPlayer(game, request.PlayerId);
+        if (player is null)
+        {
+            return NotFound(Error("player not in this game"));
+        }
+
+        if (game.Status != GameStatus.Ongoing)
+        {
+            return Conflict(new ActionResultResponse
+            {
+                Success = false,
+                Message = "game already finished",
+                Status = game.Status,
+            });
+        }
+
+        game.Resign(player);
+        return Ok(new ActionResultResponse
+        {
+            Success = true,
+            Message = null,
+            Status = game.Status,
+        });
     }
-    
+
     private GameController? TryGetGame(string gameId)
     {
         if (string.IsNullOrEmpty(gameId))
@@ -156,14 +186,14 @@ public class GamesController : ControllerBase
 
         return _gameService.GetGame(gameId);
     }
+
     private static IPlayer? TryFindPlayer(GameController game, int playerId)
     {
-        
         return game.GetPlayers().FirstOrDefault(player => player.Id == playerId);
     }
+
     private static ActionResultResponse DecideRejection(GameController game, IPlayer player)
     {
-        
         string reason;
         if (game.Status != GameStatus.Ongoing)
         {
@@ -191,3 +221,4 @@ public class GamesController : ControllerBase
         return new ErrorResponse { Message = message };
     }
 }
+

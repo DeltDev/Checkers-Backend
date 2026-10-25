@@ -1,0 +1,15 @@
+# Keep the build context small and the image reproducible: the SDK build
+# produces its own bin/obj, and git metadata is not needed to publish.
+**/bin/
+**/obj/
+.git/
+.gitignore
+*.md
+
+# Not part of the runtime image (compose builds only the Checkers project).
+Checkers.Tests/
+Checkers.Demo/
+Checkers.RestDemo/
+
+# Local run artifacts.
+endpoint-response-cases.txt
