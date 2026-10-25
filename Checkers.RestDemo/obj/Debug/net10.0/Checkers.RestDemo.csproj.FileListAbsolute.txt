@@ -1,0 +1,15 @@
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\bin\Debug\net10.0\Checkers.RestDemo.exe
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\bin\Debug\net10.0\Checkers.RestDemo.deps.json
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\bin\Debug\net10.0\Checkers.RestDemo.runtimeconfig.json
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\bin\Debug\net10.0\Checkers.RestDemo.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\bin\Debug\net10.0\Checkers.RestDemo.pdb
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.AssemblyInfoInputs.cache
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.AssemblyInfo.cs
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.csproj.CoreCompileInputs.cache
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.sourcelink.json
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\refint\Checkers.RestDemo.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.pdb
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.genruntimeconfig.cache
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\ref\Checkers.RestDemo.dll

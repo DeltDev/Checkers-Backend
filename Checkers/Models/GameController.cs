@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace Checkers.Models;
 
@@ -16,7 +17,6 @@ public class GameController
     private List<IPlayer> _players = new();
     private Dictionary<string, int> _positionCounts = new();
     private int _kingOnlyStreak;
-    private int _endgameStreak;
     private Dictionary<int, bool> _drawOffers = new();
 
     public int Turn { get; private set; }
@@ -68,7 +68,9 @@ public class GameController
         _positionCounts.Clear();
         _drawOffers.Clear();
         _kingOnlyStreak = 0;
-        _endgameStreak = 0;
+
+ 
+        _positionCounts[BuildPositionKey()] = 1;
     }
 
     public bool MakeMove(IPlayer player, Move move)
@@ -99,15 +101,11 @@ public class GameController
         ApplyMove(canonicalMove.Value);
         UpdateBookkeeping(player, canonicalMove.Value);
 
-        // [Phase 5 hook] CheckEndConditions() - wire in Phase 5 (it reads the
-        // counts and streak that UpdateBookkeeping just maintained).
-
-
         RaiseOnMoveMade(player, canonicalMove.Value);
         RaiseOnTurnChanged(Turn);
 
-        // [Phase 5 hook] IF Status is no longer Ongoing:
-        //     RaiseOnGameEnded(Status);
+
+        CheckEndConditions();
 
         return true;
     }
@@ -146,12 +144,52 @@ public class GameController
 
     public void Resign(IPlayer player)
     {
-        throw new NotImplementedException();
+        if (Status!= GameStatus.Ongoing)
+        {
+            return;
+        }
+
+        if (!HasPlayer(player))
+        {
+            return;
+        }
+
+        if (player.Color == PieceColor.White)
+        {
+            EndGame(GameStatus.BlackWon);
+        }
+        else
+        {
+            EndGame(GameStatus.WhiteWon);
+        }
     }
 
     public bool OfferDraw(IPlayer player)
     {
-        throw new NotImplementedException();
+        if (Status != GameStatus.Ongoing)
+        {
+            return false;
+        }
+
+        if (!HasPlayer(player))
+        {
+            return false;
+        }
+
+        if (DrawOfferedBy.Any(offered => offered.Id == player.Id))
+        {
+            return false;
+        }
+
+        DrawOfferedBy.Add(player);
+        _drawOffers[player.Id] = true;
+
+        if (_drawOffers.Count == 2)
+        {
+            EndGame(GameStatus.Draw);
+        }
+
+        return true;
     }
 
     // getters
@@ -186,12 +224,14 @@ public class GameController
 
     public IPlayer? GetWinner()
     {
+        if (Status == GameStatus.WhiteWon)
+        {
+            return _players.FirstOrDefault(player => player.Color == PieceColor.White);
+        }
+
         if (Status == GameStatus.BlackWon)
         {
-            _players.FirstOrDefault(player => player.Color == PieceColor.White);
-        } else if (Status == GameStatus.WhiteWon)
-        {
-            _players.FirstOrDefault(player => player.Color == PieceColor.White);
+            return _players.FirstOrDefault(player => player.Color == PieceColor.Black);
         }
 
         return null;
@@ -490,8 +530,8 @@ public class GameController
 
     private void ApplyMove(Move move)
     {
-
-        IPiece? movingPiece = GetSquare(move.From)!.Occupant;
+        
+        IPiece movingPiece = GetSquare(move.From)!.Occupant!;
 
         IPiece? removedPiece = RemovePiece(move.From);
 
@@ -597,8 +637,7 @@ public class GameController
             }
             catch
             {
-                // Per-subscriber try/catch: a broken handler must not fail the
-                // move (state is committed) nor skip later subscribers.
+                
             }
         }
     }
@@ -619,8 +658,88 @@ public class GameController
             }
             catch
             {
-                // See RaiseOnMoveMade.
+               
             }
         }
+    }
+
+    private void EndGame(GameStatus finalStatus)
+    {
+        if (Status != GameStatus.Ongoing )
+        {
+            return;
+        }
+
+        Status = finalStatus;
+        Action<GameStatus>? handlers = OnGameEnded;
+        if (handlers is null)
+        {
+            return;
+        }
+        foreach (Action<GameStatus> handler in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(finalStatus);
+            }
+            catch
+            {
+                
+            }
+        }
+    }
+
+    private void CheckEndConditions()
+    {
+
+        IPlayer playerToMove = _players.First(player => player.Color == TurnColor);
+        IPlayer winner = _players.First(player => player.Color != TurnColor);
+
+        if (CountPieces(TurnColor) == 0)
+        {
+            EndGame(winner.Color == PieceColor.Black ? GameStatus.BlackWon : GameStatus.WhiteWon);
+            return;
+        }
+
+        List<Move> legalMoves = GetLegalMoves(playerToMove);
+        if (legalMoves.Count == 0)
+        {
+            EndGame(winner.Color == PieceColor.Black ? GameStatus.BlackWon : GameStatus.WhiteWon);
+            return;
+        }
+
+        if (_positionCounts.GetValueOrDefault(BuildPositionKey()) >= 3)
+        {
+            EndGame(GameStatus.Draw);
+            return;
+        }
+
+        if (_kingOnlyStreak >= 2 * MaxKingOnlyStreak)
+        {
+            EndGame(GameStatus.Draw);
+        }
+    }
+
+
+    private int CountPieces(PieceColor color)
+    {
+        int count = 0;
+
+        foreach (Position p in Models.Board.AllPositions())
+        {
+            if (!IsPlayable(p))
+            {
+                continue;
+            }
+
+            IPiece? occupant = Board.Squares[p.Row, p.Col].Occupant;
+
+            if (occupant is not null && occupant.Color == color)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 }

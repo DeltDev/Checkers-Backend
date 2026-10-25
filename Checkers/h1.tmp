@@ -1,0 +1,7 @@
+HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+Date: Sat, 24 Oct 2026 18:28:01 GMT
+Server: Kestrel
+Location: /api/games/YsFIoMf8ukRy
+Transfer-Encoding: chunked
+

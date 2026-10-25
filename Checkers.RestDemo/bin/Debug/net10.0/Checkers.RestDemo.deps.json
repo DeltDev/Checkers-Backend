@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Checkers.RestDemo/1.0.0": {
+        "runtime": {
+          "Checkers.RestDemo.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Checkers.RestDemo/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
