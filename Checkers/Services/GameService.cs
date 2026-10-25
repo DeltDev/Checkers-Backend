@@ -17,11 +17,37 @@ public class GameService : IGameService
 
     public string CreateGame(string? whitePlayerName, string? blackPlayerName)
     {
-        throw new NotImplementedException();
+        const int maxAttempts = 10;
+        string gameId = string.Empty;
+        bool allocated = false;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            gameId = _idGenerator.NextId();
+            if (_store.Get(gameId) is null)
+            {
+                allocated = true;
+                break;
+            }
+        }
+
+        if (!allocated)
+        {
+            throw new InvalidOperationException("cannot allocate a unique game id");
+        }
+
+        GameController game = _factory.Create(whitePlayerName, blackPlayerName);
+        _store.Add(gameId, game); 
+        return gameId;
     }
 
     public GameController? GetGame(string gameId)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(gameId))
+        {
+            return null; 
+        }
+
+        return _store.Get(gameId);
     }
 }
