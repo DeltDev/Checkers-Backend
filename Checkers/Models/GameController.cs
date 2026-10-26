@@ -1,11 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
+
 
 namespace Checkers.Models;
 
 public class GameController
 {
-    private int [][] diagonalPairs =
+    private int [][] _diagonalPairs =
     {
         new int[] {1,-1},
         new int[] {1,1},
@@ -14,7 +14,7 @@ public class GameController
     };
     public static int MaxKingOnlyStreak = 25;
 
-    private List<IPlayer> _players = new();
+    private List<IPlayer> _players;
     private Dictionary<string, int> _positionCounts = new();
     private int _kingOnlyStreak;
     private Dictionary<int, bool> _drawOffers = new();
@@ -80,7 +80,7 @@ public class GameController
             return false;
         }
 
-        if (player == null || !HasPlayer(player))
+        if (!HasPlayer(player))
         {
             return false;
         }
@@ -99,7 +99,7 @@ public class GameController
         }
 
         ApplyMove(canonicalMove.Value);
-        UpdateBookkeeping(player, canonicalMove.Value);
+        UpdateBookkeeping(canonicalMove.Value);
 
         RaiseOnMoveMade(player, canonicalMove.Value);
         RaiseOnTurnChanged(Turn);
@@ -328,7 +328,7 @@ public class GameController
             }
             else
             {
-                foreach (int[] diagonalPair in diagonalPairs)
+                foreach (int[] diagonalPair in _diagonalPairs)
                 {
                     Position q = new Position(p.Row + diagonalPair[0], p.Col + diagonalPair[1]);
 
@@ -423,7 +423,7 @@ public class GameController
     {
         List<(Position Victim, Position Landing)> jumps = new();
 
-        foreach (int[] diagonalPair in diagonalPairs)
+        foreach (int[] diagonalPair in _diagonalPairs)
         {
             int rowStep = diagonalPair[0];
             int colStep = diagonalPair[1];
@@ -566,10 +566,10 @@ public class GameController
             placed = movingPiece;
         }
 
-        PlacePiece(move.To, placed!);
+        PlacePiece(move.To, placed);
     }
 
-    private void UpdateBookkeeping(IPlayer player, Move move)
+    private void UpdateBookkeeping(Move move)
     {
         History.Add(move);
         Turn++;
@@ -596,7 +596,7 @@ public class GameController
     {
         List<string> parts = new List<string>();
         
-        IPiece? Occupant;
+        IPiece? occupant;
         foreach (Position p in Models.Board.AllPositions())
         {
             if (!IsPlayable(p))
@@ -604,14 +604,14 @@ public class GameController
                 continue;
             }
 
-            Occupant = Board.Squares[p.Row, p.Col].Occupant;
-            if (Occupant == null)
+            occupant = Board.Squares[p.Row, p.Col].Occupant;
+            if (occupant == null)
             {
                 parts.Add("e");
             }
             else
             {
-                parts.Add(Occupant.Id.ToString());
+                parts.Add(occupant.Id.ToString());
             }
         }
 
