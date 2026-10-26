@@ -32,6 +32,7 @@ public class GameController
 
     public GameController(IPlayer white, IPlayer black)
     {
+        //todo: exception handling
         ArgumentNullException.ThrowIfNull(white);
         ArgumentNullException.ThrowIfNull(black);
 
@@ -54,11 +55,9 @@ public class GameController
         Reset();
     }
 
-    // mutations
-    [MemberNotNull(nameof(Board))]
     public void Reset()
     {
-        Board = new Board();
+        Board = new Board(); //todo: dari luar
         Turn = 1;
         TurnColor = PieceColor.White;
         Status = GameStatus.Ongoing;
@@ -110,36 +109,34 @@ public class GameController
         return true;
     }
 
-    public bool PlacePiece(Position pos, IPiece piece)
+    public void PlacePiece(Position pos, IPiece piece)
     {
         ArgumentNullException.ThrowIfNull(piece);
 
         if (!IsPlayable(pos))
         {
-            return false;
+            return;
         }
 
         ISquare square = Board.Squares[pos.Row, pos.Col];
         if (square.Occupant is not null)
         {
-            return false;
+            return;
         }
 
         square.Occupant = piece;
-        return true;
+        return;
     }
 
-    public IPiece? RemovePiece(Position pos)
+    public void RemovePiece(Position pos)
     {
         if (!IsPlayable(pos))
         {
-            return null;
+            return;
         }
         
         ISquare square = Board.Squares[pos.Row, pos.Col];
-        IPiece? piece = square.Occupant;
         square.Occupant = null;
-        return piece;
     }
 
     public void Resign(IPlayer player)
@@ -200,7 +197,7 @@ public class GameController
             return new List<Move>();
         }
 
-        return Generate(Board, player.Color);
+        return GenerateMoves(player.Color);
     }
 
     public ISquare[,] GetSquares()
@@ -243,12 +240,7 @@ public class GameController
                           && p.Col >= 0 && p.Col < Models.Board.Size
                           && (p.Row + p.Col) % 2 == 1;
     }
-
-    // public bool IsSquareEmpty(Position pos)
-    // {
-    //     ISquare? square = GetSquare(pos);
-    //     return square is not null && square.Occupant is null;
-    // }
+    
 
     private bool HasPlayer(IPlayer? player)
     {
@@ -260,26 +252,10 @@ public class GameController
     {
         return (SquareNumber)(p.Row * (Models.Board.Size / 2) + p.Col / 2 + 1);
     }
-
-    // public static Position? FromSquareNumber(SquareNumber n)
-    // {
-    //     int value = (int)n;
-    //
-    //     if (value < 1 || value > Models.Board.PlayableSquares)
-    //     {
-    //         return null;
-    //     }
-    //
-    //     int row = (value - 1) / (Models.Board.Size / 2);
-    //     int indexInRow = (value - 1) % (Models.Board.Size / 2);
-    //     int col = (indexInRow * 2) + (row % 2 == 0 ? 1 : 0);
-    //
-    //     return new Position(row, col);
-    // }
     
-    private List<Move> Generate(IBoard board, PieceColor pieceColor)
+    private List<Move> GenerateMoves(PieceColor pieceColor)
     {
-        List<Move> captures = GenerateCaptureMoves(board, pieceColor);
+        List<Move> captures = GenerateCaptureMoves(pieceColor);
 
         if (captures.Count > 0)
         {
@@ -291,10 +267,10 @@ public class GameController
             return captures.Where(capture => capture.Captured.Length == maxCount).ToList();
         }
 
-        return GenerateQuietMoves(board, pieceColor);
+        return GenerateQuietMoves(pieceColor);
     }
 
-    private  List<Move> GenerateQuietMoves(IBoard board, PieceColor pieceColor)
+    private  List<Move> GenerateQuietMoves(PieceColor pieceColor)
     {
         List<Move> moves = new();
 
@@ -305,7 +281,7 @@ public class GameController
                 continue;
             }
             
-            IPiece? piece = board.Squares[p.Row, p.Col].Occupant;
+            IPiece? piece = Board.Squares[p.Row, p.Col].Occupant;
 
             if (piece == null || piece.Color != pieceColor)
             {
@@ -320,7 +296,7 @@ public class GameController
                 {
                     Position to = new Position(p.Row + rowStep, p.Col + colStep);
 
-                    if (IsPlayable(to) && board.Squares[to.Row, to.Col].Occupant is null)
+                    if (IsPlayable(to) && Board.Squares[to.Row, to.Col].Occupant is null)
                     {
                         moves.Add(new Move(p,to,null,null,MoveType.Quiet, pieceColor, piece.Type));
                     }
@@ -332,7 +308,7 @@ public class GameController
                 {
                     Position q = new Position(p.Row + diagonalPair[0], p.Col + diagonalPair[1]);
 
-                    while (IsPlayable(q) && board.Squares[q.Row, q.Col].Occupant is null)
+                    while (IsPlayable(q) && Board.Squares[q.Row, q.Col].Occupant is null)
                     {
                         moves.Add(new Move(p,q,null,null,MoveType.Quiet, pieceColor, piece.Type));
                         q = new Position(q.Row + diagonalPair[0], q.Col + diagonalPair[1]);
@@ -344,10 +320,10 @@ public class GameController
         return moves;
     }
 
-    private List<Move> GenerateCaptureMoves(IBoard board, PieceColor pieceColor)
+    private List<Move> GenerateCaptureMoves(PieceColor pieceColor)
     {
         List<Move> result = new();
-        IPiece?[,] pieces = ClonePieces(board);
+        IPiece?[,] pieces = ClonePieces(Board);
         bool[,] flags = new bool[Models.Board.Size, Models.Board.Size];
 
         foreach (Position p in Models.Board.AllPositions())
@@ -419,6 +395,7 @@ public class GameController
         }
     }
 
+    //todo: buat class baru
     private List<(Position Victim, Position Landing)> GetJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece)
     {
         List<(Position Victim, Position Landing)> jumps = new();
@@ -442,7 +419,7 @@ public class GameController
     }
 
     private static void AddManJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece,
-        int rowStep, int colStep, List<(Position Victim, Position Landing)> jumps)
+        int rowStep, int colStep, List<(Position Victim, Position Landing)> jumps) //todo: buat class baru
     {
         Position victim = new Position(current.Row + rowStep, current.Col + colStep);
         Position landing = new Position(current.Row + (2 * rowStep), current.Col + (2 * colStep));
@@ -502,8 +479,6 @@ public class GameController
     //cari apakah move yang direquest legal atau bukan
     private Move? FindLegalMove(List<Move> legalMoves, Move reqMove)
     {
-
-
         foreach (Move candidate in legalMoves)
         {
             if (candidate.From != reqMove.From)
@@ -629,8 +604,9 @@ public class GameController
             return;
         }
 
-        foreach (Action<IPlayer, Move> handler in handlers.GetInvocationList())
+        foreach (var @delegate in handlers.GetInvocationList())
         {
+            var handler = (Action<IPlayer, Move>)@delegate;
             handler(player, move);
         }
     }
@@ -643,11 +619,11 @@ public class GameController
             return;
         }
 
-        foreach (Action<int> handler in handlers.GetInvocationList())
+        foreach (var @delegate in handlers.GetInvocationList())
         {
-            
-                handler(turn);
-            
+            var handler = (Action<int>)@delegate;
+
+            handler(turn);
         }
     }
 
@@ -664,8 +640,9 @@ public class GameController
         {
             return;
         }
-        foreach (Action<GameStatus> handler in handlers.GetInvocationList())
+        foreach (var @delegate in handlers.GetInvocationList())
         {
+            var handler = (Action<GameStatus>)@delegate;
             handler(finalStatus);
         }
     }

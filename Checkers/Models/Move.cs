@@ -21,6 +21,7 @@ public struct Move
         PieceType = pieceType;
     }
 
+    //TODO: kETIGA BEHAVIOR INI JANGAN DI TAROH DI  CLASS MOVE
     public bool IsCapture()
     {
         return Type == MoveType.Capture;

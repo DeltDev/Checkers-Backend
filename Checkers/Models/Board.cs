@@ -37,7 +37,8 @@ public class Board : IBoard
                 if (isSquareDark)
                 {
                     Squares[i, j] = new Square(new Position(i, j), (SquareNumber)playableSquareNumber++, isSquareDark);
-
+                    
+                    //todo: inisialisasi piecenya dari luar
                     if (i < 4)
                     {
                         Piece newManPiece = new Piece(pieceId++, PieceColor.Black, PieceType.Man);
@@ -48,6 +49,9 @@ public class Board : IBoard
                         Piece newManPiece = new Piece(pieceId++, PieceColor.White, PieceType.Man);
                         Squares[i, j].Occupant = newManPiece;
                     }
+                    
+                    
+                    
                 }
                 else
                 {

@@ -83,7 +83,7 @@ public class GamesController : ControllerBase
     [HttpPost("{gameId}/moves")]
     public ActionResult<ActionResultResponse> MakeMove(string gameId, [FromBody] MakeMoveRequest request)
     {
-        GameController? game = TryGetGame(gameId);
+        GameController? game = TryGetGame(gameId); //buat service layer baru
         if (game is null)
         {
             return NotFound(Error("game not found"));
