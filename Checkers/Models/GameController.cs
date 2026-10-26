@@ -244,11 +244,11 @@ public class GameController
                           && (p.Row + p.Col) % 2 == 1;
     }
 
-    public bool IsSquareEmpty(Position pos)
-    {
-        ISquare? square = GetSquare(pos);
-        return square is not null && square.Occupant is null;
-    }
+    // public bool IsSquareEmpty(Position pos)
+    // {
+    //     ISquare? square = GetSquare(pos);
+    //     return square is not null && square.Occupant is null;
+    // }
 
     private bool HasPlayer(IPlayer? player)
     {
@@ -261,21 +261,21 @@ public class GameController
         return (SquareNumber)(p.Row * (Models.Board.Size / 2) + p.Col / 2 + 1);
     }
 
-    public static Position? FromSquareNumber(SquareNumber n)
-    {
-        int value = (int)n;
-
-        if (value < 1 || value > Models.Board.PlayableSquares)
-        {
-            return null;
-        }
-
-        int row = (value - 1) / (Models.Board.Size / 2);
-        int indexInRow = (value - 1) % (Models.Board.Size / 2);
-        int col = (indexInRow * 2) + (row % 2 == 0 ? 1 : 0);
-
-        return new Position(row, col);
-    }
+    // public static Position? FromSquareNumber(SquareNumber n)
+    // {
+    //     int value = (int)n;
+    //
+    //     if (value < 1 || value > Models.Board.PlayableSquares)
+    //     {
+    //         return null;
+    //     }
+    //
+    //     int row = (value - 1) / (Models.Board.Size / 2);
+    //     int indexInRow = (value - 1) % (Models.Board.Size / 2);
+    //     int col = (indexInRow * 2) + (row % 2 == 0 ? 1 : 0);
+    //
+    //     return new Position(row, col);
+    // }
     
     private List<Move> Generate(IBoard board, PieceColor pieceColor)
     {
@@ -533,7 +533,7 @@ public class GameController
         
         IPiece movingPiece = GetSquare(move.From)!.Occupant!;
 
-        IPiece? removedPiece = RemovePiece(move.From);
+        RemovePiece(move.From);
 
         if (move.Type == MoveType.Capture)
         {
@@ -566,7 +566,7 @@ public class GameController
             placed = movingPiece;
         }
 
-        bool _ = PlacePiece(move.To, placed!);
+        PlacePiece(move.To, placed!);
     }
 
     private void UpdateBookkeeping(IPlayer player, Move move)
@@ -631,14 +631,7 @@ public class GameController
 
         foreach (Action<IPlayer, Move> handler in handlers.GetInvocationList())
         {
-            try
-            {
-                handler(player, move);
-            }
-            catch
-            {
-                
-            }
+            handler(player, move);
         }
     }
 
@@ -652,14 +645,9 @@ public class GameController
 
         foreach (Action<int> handler in handlers.GetInvocationList())
         {
-            try
-            {
+            
                 handler(turn);
-            }
-            catch
-            {
-               
-            }
+            
         }
     }
 
@@ -678,14 +666,7 @@ public class GameController
         }
         foreach (Action<GameStatus> handler in handlers.GetInvocationList())
         {
-            try
-            {
-                handler(finalStatus);
-            }
-            catch
-            {
-                
-            }
+            handler(finalStatus);
         }
     }
 
