@@ -12,22 +12,15 @@ public class InMemoryGameStore : IGameStore
         lock (_sync)
         {
  
-            if (_games.ContainsKey(gameId))
+            if (!_games.TryAdd(gameId, game))
             {
                 throw new ArgumentException("duplicate game id", nameof(gameId));
             }
-
-            _games[gameId] = game;
         }
     }
 
     public GameController? Get(string gameId)
     {
-        if (gameId is null)
-        {
-            return null;
-        }
-
         lock (_sync)
         {
             

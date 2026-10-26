@@ -364,24 +364,24 @@ public class GameController
     private void SearchCaptures(IPiece?[,] pieces, bool[,] flags, Position from, Position current,
         IPiece piece, List<Position> landings, List<IPiece> captured, List<Move> result)
     {
-        List<(Position Victim, Position Landing)> jumps = GetJumps(pieces, flags, current, piece);
+        List<CaptureJump> jumps = GetJumps(pieces, flags, current, piece);
 
-        foreach ((Position victim, Position landing) in jumps)
+        foreach (CaptureJump jump in jumps)
         {
 
             pieces[current.Row, current.Col] = null;
-            pieces[landing.Row, landing.Col] = piece;
-            flags[victim.Row, victim.Col] = true; 
-            captured.Add(pieces[victim.Row, victim.Col]!);
-            landings.Add(landing);
+            pieces[jump.Landing.Row, jump.Landing.Col] = piece;
+            flags[jump.Victim.Row, jump.Victim.Col] = true; 
+            captured.Add(pieces[jump.Victim.Row, jump.Victim.Col]!);
+            landings.Add(jump.Landing);
 
 
-            SearchCaptures(pieces, flags, from, landing, piece, landings, captured, result);
+            SearchCaptures(pieces, flags, from, jump.Landing, piece, landings, captured, result);
 
             captured.RemoveAt(captured.Count - 1);
             landings.RemoveAt(landings.Count - 1);
-            flags[victim.Row, victim.Col] = false;
-            pieces[landing.Row, landing.Col] = null;
+            flags[jump.Victim.Row, jump.Victim.Col] = false;
+            pieces[jump.Landing.Row, jump.Landing.Col] = null;
             pieces[current.Row, current.Col] = piece;
         }
 
@@ -396,9 +396,9 @@ public class GameController
     }
 
     //todo: buat class baru
-    private List<(Position Victim, Position Landing)> GetJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece)
+    private List<CaptureJump> GetJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece)
     {
-        List<(Position Victim, Position Landing)> jumps = new();
+        List<CaptureJump> jumps = new();
 
         foreach (int[] diagonalPair in _diagonalPairs)
         {
@@ -419,7 +419,7 @@ public class GameController
     }
 
     private static void AddManJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece,
-        int rowStep, int colStep, List<(Position Victim, Position Landing)> jumps) //todo: buat class baru
+        int rowStep, int colStep, List<CaptureJump> jumps) //todo: buat class baru
     {
         Position victim = new Position(current.Row + rowStep, current.Col + colStep);
         Position landing = new Position(current.Row + (2 * rowStep), current.Col + (2 * colStep));
@@ -441,11 +441,11 @@ public class GameController
             return;
         }
 
-        jumps.Add((victim, landing));
+        jumps.Add(new CaptureJump{Landing = landing, Victim = victim});
     }
 
     private static void AddKingJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece,
-        int rowStep, int colStep, List<(Position Victim, Position Landing)> jumps)
+        int rowStep, int colStep, List<CaptureJump> jumps)
     {
         Position square = new Position(current.Row + rowStep, current.Col + colStep);
 
@@ -464,7 +464,7 @@ public class GameController
 
                 while (IsPlayable(landing) && pieces[landing.Row, landing.Col] is null)
                 {
-                    jumps.Add((square, landing));
+                    jumps.Add(new CaptureJump{Landing = landing, Victim = square});
                     landing = new Position(landing.Row + rowStep, landing.Col + colStep);
                 }
 
@@ -700,4 +700,6 @@ public class GameController
 
         return count;
     }
+    
+    
 }
