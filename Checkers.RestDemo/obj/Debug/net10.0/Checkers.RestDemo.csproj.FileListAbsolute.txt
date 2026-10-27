@@ -13,3 +13,8 @@ C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\ref
 C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.pdb
 C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\Checkers.RestDemo.genruntimeconfig.cache
 C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers.RestDemo\obj\Debug\net10.0\ref\Checkers.RestDemo.dll
+C:\Users\Lenovo\AppData\Local\Temp\Checkers.RestDemo-out\Checkers.RestDemo.exe
+C:\Users\Lenovo\AppData\Local\Temp\Checkers.RestDemo-out\Checkers.RestDemo.deps.json
+C:\Users\Lenovo\AppData\Local\Temp\Checkers.RestDemo-out\Checkers.RestDemo.runtimeconfig.json
+C:\Users\Lenovo\AppData\Local\Temp\Checkers.RestDemo-out\Checkers.RestDemo.dll
+C:\Users\Lenovo\AppData\Local\Temp\Checkers.RestDemo-out\Checkers.RestDemo.pdb

@@ -17,7 +17,6 @@ public class Board : IBoard
         Squares = new ISquare[Size, Size];
         int playableSquareNumber = 1;
         int squareNumberReal = 1;
-        int pieceId = 1;
         for (int i = 0; i < Size; i++)
         {
             for (int j = 0; j < Size; j++)
@@ -37,21 +36,6 @@ public class Board : IBoard
                 if (isSquareDark)
                 {
                     Squares[i, j] = new Square(new Position(i, j), (SquareNumber)playableSquareNumber++, isSquareDark);
-                    
-                    //todo: inisialisasi piecenya dari luar
-                    if (i < 4)
-                    {
-                        Piece newManPiece = new Piece(pieceId++, PieceColor.Black, PieceType.Man);
-                        Squares[i, j].Occupant = newManPiece;
-                    }
-                    else if (i > 5)
-                    {
-                        Piece newManPiece = new Piece(pieceId++, PieceColor.White, PieceType.Man);
-                        Squares[i, j].Occupant = newManPiece;
-                    }
-                    
-                    
-                    
                 }
                 else
                 {

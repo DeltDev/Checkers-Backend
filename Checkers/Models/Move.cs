@@ -20,7 +20,4 @@ public struct Move
         Color = color;
         PieceType = pieceType;
     }
-
-    
-    
 }

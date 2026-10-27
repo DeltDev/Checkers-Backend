@@ -15,6 +15,8 @@ public class GameController
     public static int MaxKingOnlyStreak = 25;
 
     private List<IPlayer> _players;
+    private readonly IBoardFactory _boardFactory;
+    private readonly IPieceFactory _pieceFactory;
     private Dictionary<string, int> _positionCounts = new();
     private int _kingOnlyStreak;
     private Dictionary<int, bool> _drawOffers = new();
@@ -30,11 +32,31 @@ public class GameController
     public Action<IPlayer, Move>? OnMoveMade;
     public Action<GameStatus>? OnGameEnded;
 
+    /// <summary>
+    /// Convenience overload for tests and quick setup: uses the default
+    /// factories. Production (GameFactory) injects the DI-registered ones.
+    /// </summary>
     public GameController(IPlayer white, IPlayer black)
+        : this(white, black, new BoardFactory(new PieceFactory()), new PieceFactory())
     {
-        //todo: exception handling
+    }
+
+    public GameController(
+        IPlayer white,
+        IPlayer black,
+        IBoardFactory boardFactory,
+        IPieceFactory pieceFactory)
+    {
+    // Exceptions thrown here are handled at the API boundary:
+    // GamesController.ExceptionResult maps them to 400/500 responses, with
+    // the Program.cs global handler as the final safety net.
         ArgumentNullException.ThrowIfNull(white);
         ArgumentNullException.ThrowIfNull(black);
+        ArgumentNullException.ThrowIfNull(boardFactory);
+        ArgumentNullException.ThrowIfNull(pieceFactory);
+
+        _boardFactory = boardFactory;
+        _pieceFactory = pieceFactory;
 
         if (white.Color != PieceColor.White)
         {
@@ -57,7 +79,9 @@ public class GameController
 
     public void Reset()
     {
-        Board = new Board(); //todo: dari luar
+        // Board comes from outside: the factory builds the grid AND places
+        // the starting pieces (via IPieceFactory), never "new Board" here.
+        Board = _boardFactory.CreateBoard();
         Turn = 1;
         TurnColor = PieceColor.White;
         Status = GameStatus.Ongoing;
@@ -207,7 +231,7 @@ public class GameController
 
     public List<IPlayer> GetPlayers()
     {
-        return new(_players);
+        return (_players);
     }
 
     public ISquare? GetSquare(Position pos)
@@ -217,6 +241,13 @@ public class GameController
             return null;
         }
         return Board.Squares[pos.Row, pos.Col];
+    }
+
+    /// <summary>True when the position is a playable square with no piece on
+    /// it (plan phase-5 API used by the tests; bounds-safe).</summary>
+    public bool IsSquareEmpty(Position pos)
+    {
+        return IsPlayable(pos) && Board.Squares[pos.Row, pos.Col].Occupant is null;
     }
 
     public IPlayer? GetWinner()
@@ -395,7 +426,6 @@ public class GameController
         }
     }
 
-    //todo: buat class baru
     private List<CaptureJump> GetJumps(IPiece?[,] pieces, bool[,] flags, Position current, IPiece piece)
     {
         List<CaptureJump> jumps = new();
@@ -475,8 +505,7 @@ public class GameController
         }
     }
 
-    
-    //cari apakah move yang direquest legal atau bukan
+
     private Move? FindLegalMove(List<Move> legalMoves, Move reqMove)
     {
         foreach (Move candidate in legalMoves)
@@ -534,7 +563,9 @@ public class GameController
         IPiece? placed;
         if (IsPromotion(move))
         {
-            placed = new Piece(movingPiece.Id, movingPiece.Color, PieceType.King);
+            // Crown created through the injected piece factory - the only
+            // place "new Piece" may exist is PieceFactory itself.
+            placed = _pieceFactory.CreateKing(movingPiece.Id, movingPiece.Color);
         }
         else
         {
@@ -701,7 +732,6 @@ public class GameController
         return count;
     }
     
-    //TODO: kETIGA BEHAVIOR INI JANGAN DI TAROH DI  CLASS MOVE
     private static bool IsCapture(Move move)
     {
         return move.Type == MoveType.Capture;

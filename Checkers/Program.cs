@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Checkers.Contracts.Responses;
+using Checkers.Models;
 using Checkers.Services;
 using Microsoft.AspNetCore.Diagnostics;
 
@@ -11,6 +12,8 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
+builder.Services.AddSingleton<IPieceFactory, PieceFactory>();
+builder.Services.AddSingleton<IBoardFactory, BoardFactory>();
 builder.Services.AddSingleton<IGameIdGenerator, GameIdGenerator>();
 builder.Services.AddSingleton<IGameStore, InMemoryGameStore>();
 builder.Services.AddSingleton<IGameFactory, GameFactory>();
