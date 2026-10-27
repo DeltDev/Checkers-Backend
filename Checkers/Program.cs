@@ -18,6 +18,7 @@ builder.Services.AddSingleton<IGameIdGenerator, GameIdGenerator>();
 builder.Services.AddSingleton<IGameStore, InMemoryGameStore>();
 builder.Services.AddSingleton<IGameFactory, GameFactory>();
 builder.Services.AddSingleton<IGameService, GameService>();
+builder.Services.AddSingleton<IGameProvider, GameProvider>();
 
 const string CorsPolicy = "Frontend";
 string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()

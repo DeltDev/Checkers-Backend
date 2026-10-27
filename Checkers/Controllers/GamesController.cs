@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Checkers.Contracts.Requests;
 using Checkers.Contracts.Responses;
 using Checkers.Mapping;
@@ -13,12 +12,12 @@ namespace Checkers.Controllers;
 [Route("api/games")]
 public class GamesController : ControllerBase
 {
-    private readonly IGameService _gameService;
+    private readonly IGameProvider _provider;
     private readonly ILogger<GamesController> _logger;
 
-    public GamesController(IGameService gameService, ILogger<GamesController> logger)
+    public GamesController(IGameProvider provider, ILogger<GamesController> logger)
     {
-        _gameService = gameService;
+        _provider = provider;
         _logger = logger;
     }
 
@@ -27,15 +26,15 @@ public class GamesController : ControllerBase
     {
         try
         {
-            string gameId = _gameService.CreateGame(request.WhitePlayerName, request.BlackPlayerName);
+            string gameId = _provider.CreateGame(request.WhitePlayerName, request.BlackPlayerName);
 
-            GameController? game = _gameService.GetGame(gameId);
-            if (game is null)
+            GameAccess access = _provider.OpenGame(gameId);
+            if (!access.IsReady)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, Error("game not found after creation"));
+                return StatusCode(StatusCodes.Status500InternalServerError, Error(access.Error!));
             }
 
-            GameStateResponse response = game.ToResponse();
+            GameStateResponse response = access.Game!.ToResponse();
             response.GameId = gameId;
             return Created($"/api/games/{gameId}", response);
         }
@@ -50,13 +49,13 @@ public class GamesController : ControllerBase
     {
         try
         {
-            GameController? game = TryGetGame(gameId);
-            if (game is null)
+            GameAccess access = _provider.OpenGame(gameId);
+            if (!access.IsReady)
             {
-                return NotFound(Error("game not found"));
+                return NotFound(Error(access.Error!));
             }
 
-            GameStateResponse response = game.ToResponse();
+            GameStateResponse response = access.Game!.ToResponse();
             response.GameId = gameId;
             return Ok(response);
         }
@@ -71,10 +70,10 @@ public class GamesController : ControllerBase
     {
         try
         {
-            GameController? game = TryGetGame(gameId);
-            if (game is null)
+            GameAccess access = _provider.OpenGame(gameId);
+            if (!access.IsReady)
             {
-                return NotFound(Error("game not found"));
+                return NotFound(Error(access.Error!));
             }
 
             if (playerId is null)
@@ -82,14 +81,14 @@ public class GamesController : ControllerBase
                 return BadRequest(Error("playerId query parameter is required"));
             }
 
-            IPlayer? player = TryFindPlayer(game, playerId.Value);
-            if (player is null)
+            PlayerAccess playerAccess = _provider.FindPlayer(access.Game!, playerId.Value);
+            if (!playerAccess.IsReady)
             {
-                return NotFound(Error("player not in this game"));
+                return NotFound(Error(playerAccess.Error!));
             }
 
             LegalMovesResponse result = new();
-            foreach (Move move in game.GetLegalMoves(player))
+            foreach (Move move in access.Game!.GetLegalMoves(playerAccess.Player!))
             {
                 result.Moves.Add(move.ToResponse());
             }
@@ -107,16 +106,16 @@ public class GamesController : ControllerBase
     {
         try
         {
-            GameController? game = TryGetGame(gameId); //buat service layer baru
-            if (game is null)
+            GameAccess access = _provider.OpenGame(gameId);
+            if (!access.IsReady)
             {
-                return NotFound(Error("game not found"));
+                return NotFound(Error(access.Error!));
             }
 
-            IPlayer? player = TryFindPlayer(game, request.PlayerId);
-            if (player is null)
+            PlayerAccess playerAccess = _provider.FindPlayer(access.Game!, request.PlayerId);
+            if (!playerAccess.IsReady)
             {
-                return NotFound(Error("player not in this game"));
+                return NotFound(Error(playerAccess.Error!));
             }
 
             Move requested = new(
@@ -125,19 +124,19 @@ public class GamesController : ControllerBase
                 request.Path ?? Array.Empty<Position>(),
                 Array.Empty<IPiece>(),
                 MoveType.Quiet,
-                player.Color,
+                playerAccess.Player!.Color,
                 PieceType.Man);
 
-            if (!game.MakeMove(player, requested))
+            if (!access.Game!.MakeMove(playerAccess.Player!, requested))
             {
-                return Conflict(DecideRejection(game, player));
+                return Conflict(DecideRejection(access.Game!, playerAccess.Player!));
             }
 
             return Ok(new ActionResultResponse
             {
                 Success = true,
                 Message = null,
-                Status = game.Status,
+                Status = access.Game!.Status,
             });
         }
         catch (Exception ex)
@@ -151,25 +150,25 @@ public class GamesController : ControllerBase
     {
         try
         {
-            GameController? game = TryGetGame(gameId);
-            if (game is null)
+            GameAccess access = _provider.OpenGame(gameId);
+            if (!access.IsReady)
             {
-                return NotFound(Error("game not found"));
+                return NotFound(Error(access.Error!));
             }
 
-            IPlayer? player = TryFindPlayer(game, request.PlayerId);
-            if (player is null)
+            PlayerAccess playerAccess = _provider.FindPlayer(access.Game!, request.PlayerId);
+            if (!playerAccess.IsReady)
             {
-                return NotFound(Error("player not in this game"));
+                return NotFound(Error(playerAccess.Error!));
             }
 
-            bool accepted = game.OfferDraw(player);
+            bool accepted = access.Game!.OfferDraw(playerAccess.Player!);
 
             return Ok(new ActionResultResponse
             {
                 Success = accepted,
                 Message = accepted ? null : "draw offer rejected (finished game or duplicate)",
-                Status = game.Status,
+                Status = access.Game!.Status,
             });
         }
         catch (Exception ex)
@@ -183,34 +182,34 @@ public class GamesController : ControllerBase
     {
         try
         {
-            GameController? game = TryGetGame(gameId);
-            if (game is null)
+            GameAccess access = _provider.OpenGame(gameId);
+            if (!access.IsReady)
             {
-                return NotFound(Error("game not found"));
+                return NotFound(Error(access.Error!));
             }
 
-            IPlayer? player = TryFindPlayer(game, request.PlayerId);
-            if (player is null)
+            PlayerAccess playerAccess = _provider.FindPlayer(access.Game!, request.PlayerId);
+            if (!playerAccess.IsReady)
             {
-                return NotFound(Error("player not in this game"));
+                return NotFound(Error(playerAccess.Error!));
             }
 
-            if (game.Status != GameStatus.Ongoing)
+            if (access.Game!.Status != GameStatus.Ongoing)
             {
                 return Conflict(new ActionResultResponse
                 {
                     Success = false,
                     Message = "game already finished",
-                    Status = game.Status,
+                    Status = access.Game!.Status,
                 });
             }
 
-            game.Resign(player);
+            access.Game!.Resign(playerAccess.Player!);
             return Ok(new ActionResultResponse
             {
                 Success = true,
                 Message = null,
-                Status = game.Status,
+                Status = access.Game!.Status,
             });
         }
         catch (Exception ex)
@@ -219,12 +218,18 @@ public class GamesController : ControllerBase
         }
     }
 
-
+    /// <summary>
+    /// Maps an exception that escaped an action to an HTTP response: input
+    /// errors (out-of-range indexes, bad arguments, malformed values) become
+    /// 400 with the exception message, anything else is logged and answered
+    /// with a generic 500 so internals never leak. Program.cs keeps the global
+    /// exception handler as the final safety net outside the controller.
+    /// </summary>
     private ActionResult ExceptionResult(string operation, Exception ex)
     {
         switch (ex)
         {
-            case ArgumentException: 
+            case ArgumentException: // includes ArgumentNullException / ArgumentOutOfRange
             case IndexOutOfRangeException:
             case FormatException:
             case OverflowException:
@@ -235,21 +240,6 @@ public class GamesController : ControllerBase
                 _logger.LogError(ex, "{Operation} failed with an unexpected exception", operation);
                 return StatusCode(StatusCodes.Status500InternalServerError, Error("internal server error"));
         }
-    }
-
-    private GameController? TryGetGame(string gameId)
-    {
-        if (string.IsNullOrEmpty(gameId))
-        {
-            return null;
-        }
-
-        return _gameService.GetGame(gameId);
-    }
-
-    private static IPlayer? TryFindPlayer(GameController game, int playerId)
-    {
-        return game.GetPlayers().FirstOrDefault(player => player.Id == playerId);
     }
 
     private static ActionResultResponse DecideRejection(GameController game, IPlayer player)

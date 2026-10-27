@@ -32,10 +32,6 @@ public class GameController
     public Action<IPlayer, Move>? OnMoveMade;
     public Action<GameStatus>? OnGameEnded;
 
-    /// <summary>
-    /// Convenience overload for tests and quick setup: uses the default
-    /// factories. Production (GameFactory) injects the DI-registered ones.
-    /// </summary>
     public GameController(IPlayer white, IPlayer black)
         : this(white, black, new BoardFactory(new PieceFactory()), new PieceFactory())
     {
@@ -47,9 +43,6 @@ public class GameController
         IBoardFactory boardFactory,
         IPieceFactory pieceFactory)
     {
-    // Exceptions thrown here are handled at the API boundary:
-    // GamesController.ExceptionResult maps them to 400/500 responses, with
-    // the Program.cs global handler as the final safety net.
         ArgumentNullException.ThrowIfNull(white);
         ArgumentNullException.ThrowIfNull(black);
         ArgumentNullException.ThrowIfNull(boardFactory);
