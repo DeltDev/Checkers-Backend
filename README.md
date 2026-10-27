@@ -1,3 +1,17 @@
+# Checkers
+10 x 10 international checkers rules on the web.
+
+![main menu](CheckersImage1.png)
+![Gameplay](CheckersImage2.png)
+![Endgame](CheckersImage3.png)
+
+# How to run
+Prerequisites:
+- Docker (Linux)
+- Docker Desktop (Windows)
+1. Clone this repository and [this repository](https://github.com/DeltDev/Checkers-Frontend/) 
+2. `cd` to `Checkers-Backend` and run `docker compose up --build`
+
 # Checkers API
 
 REST API for the 10x10 international-draughts checkers backend (ASP.NET Core, .NET 10).
