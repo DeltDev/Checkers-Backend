@@ -532,7 +532,7 @@ public class GameController
         }
 
         IPiece? placed;
-        if (move.IsPromotion())
+        if (IsPromotion(move))
         {
             placed = new Piece(movingPiece.Id, movingPiece.Color, PieceType.King);
         }
@@ -701,5 +701,55 @@ public class GameController
         return count;
     }
     
-    
-}
+    //TODO: kETIGA BEHAVIOR INI JANGAN DI TAROH DI  CLASS MOVE
+    private static bool IsCapture(Move move)
+    {
+        return move.Type == MoveType.Capture;
+    }
+
+    private static bool IsPromotion(Move move)
+    {
+
+        if (move.PieceType != PieceType.Man)
+        {
+            return false;
+        }
+
+        if (move.Color == PieceColor.White)
+        {
+            return move.To.Row == 0;
+        }
+
+        if (move.Color == PieceColor.Black)
+        {
+            return move.To.Row == Models.Board.Size-1;
+        }
+        return false;
+    }
+
+    public static string ToNotation(Move move)
+    {
+        bool isCapture = IsCapture(move);
+        string separator = isCapture ? "x" : ":";
+
+        List<int> outputSquares = new(){(int) ToSquareNumber(move.From)};
+
+        if (isCapture)
+        {
+            foreach (Position step in move.Path)
+            {
+                if (step == move.From || step == move.To)
+                {
+                    continue;
+                }
+                outputSquares.Add((int) ToSquareNumber(step));
+            }
+            
+            
+        }
+        
+        outputSquares.Add((int) ToSquareNumber(move.To));
+            
+        return string.Join(separator, outputSquares.Select(number => $"[{number}]"));
+
+    } }

@@ -21,57 +21,6 @@ public struct Move
         PieceType = pieceType;
     }
 
-    //TODO: kETIGA BEHAVIOR INI JANGAN DI TAROH DI  CLASS MOVE
-    public bool IsCapture()
-    {
-        return Type == MoveType.Capture;
-    }
-
-    public bool IsPromotion()
-    {
-
-        if (PieceType != PieceType.Man)
-        {
-            return false;
-        }
-
-        if (Color == PieceColor.White)
-        {
-            return To.Row == 0;
-        }
-
-        if (Color == PieceColor.Black)
-        {
-            return To.Row == Board.Size-1;
-        }
-        return false;
-    }
-
-    public string ToNotation()
-    {
-        bool isCapture = IsCapture();
-        string separator = isCapture ? "x" : ":";
-
-        List<int> outputSquares = new(){(int) GameController.ToSquareNumber(From)};
-
-        if (isCapture)
-        {
-            foreach (Position step in Path)
-            {
-                if (step == From || step == To)
-                {
-                    continue;
-                }
-                outputSquares.Add((int) GameController.ToSquareNumber(step));
-            }
-            
-            
-        }
-        
-        outputSquares.Add((int) GameController.ToSquareNumber(To));
-            
-        return string.Join(separator, outputSquares.Select(number => $"[{number}]"));
-
-    }
+    
     
 }

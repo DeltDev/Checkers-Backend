@@ -48,7 +48,7 @@ public static class GameStateMapper
             CapturedPieceIds = move.Captured.Select(victim => victim.Id).ToArray(),
             Type = move.Type,
             Color = move.Color,
-            Notation = move.ToNotation(),
+            Notation = GameController.ToNotation(move),
         };
     }
 
