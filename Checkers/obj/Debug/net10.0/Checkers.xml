@@ -1,0 +1,239 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Checkers</name>
+    </assembly>
+    <members>
+        <member name="T:Checkers.Contracts.Requests.CreateGameRequest">
+            <summary>Body for POST /api/games.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.CreateGameRequest.WhitePlayerName">
+            <summary>Display name of the White player (id 1). Required; falls back to "Player 1" when blank.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.CreateGameRequest.BlackPlayerName">
+            <summary>Display name of the Black player (id 2). Optional; falls back to "Player 2".</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Requests.MakeMoveRequest">
+            <summary>Body for POST /api/games/{gameId}/moves.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.MakeMoveRequest.PlayerId">
+            <summary>The moving player's id: 1 = White, 2 = Black. Must be that player's turn.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.MakeMoveRequest.From">
+            <summary>Source square as 0-based {row, col}; row 0 is Black's back rank.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.MakeMoveRequest.To">
+            <summary>Destination square as 0-based {row, col}. For multi-jumps this is the final landing square.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.MakeMoveRequest.Path">
+            <summary>Optional. For multi-jumps, the intermediate landing squares; must equal one of GET /moves' path values.</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Requests.OfferDrawRequest">
+            <summary>Body for POST /api/games/{gameId}/draw.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.OfferDrawRequest.PlayerId">
+            <summary>The offering player's id: 1 = White, 2 = Black.</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Requests.ResignRequest">
+            <summary>Body for POST /api/games/{gameId}/resign.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Requests.ResignRequest.PlayerId">
+            <summary>The resigning player's id: 1 = White, 2 = Black. The opponent wins.</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Responses.ActionResultResponse">
+            <summary>Outcome of a move, draw offer or resignation. Always HTTP 2xx unless the request itself was invalid.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.ActionResultResponse.Success">
+            <summary>True when the action was accepted; false when rejected (e.g. duplicate draw offer).</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.ActionResultResponse.Message">
+            <summary>Rejection reason when <see cref="P:Checkers.Contracts.Responses.ActionResultResponse.Success"/> is false; otherwise null.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.ActionResultResponse.Status">
+            <summary>The game status after the action: Ongoing, WhiteWon, BlackWon or Draw.</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Responses.ErrorResponse">
+            <summary>Body of every 400/404/500 error response.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.ErrorResponse.Message">
+            <summary>Human-readable reason, e.g. "game not found".</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Responses.GameStateResponse">
+            <summary>Full snapshot of a game.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.GameId">
+            <summary>The game id (route key for every other endpoint).</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.Turn">
+            <summary>Ply counter: 1 after creation, +1 per applied move.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.TurnColor">
+            <summary>Side to move now: White or Black.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.Status">
+            <summary>Ongoing, WhiteWon, BlackWon or Draw.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.WinnerId">
+            <summary>Winning player's id when the game is decided; null while ongoing or on a draw.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.Players">
+            <summary>The two players (id 1 White, id 2 Black).</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.Squares">
+            <summary>All 100 squares (light ones carry no occupant fields).</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.GameStateResponse.History">
+            <summary>Every applied move in order, with algebraic-style notation.</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Responses.LegalMovesResponse">
+            <summary>Body of GET /api/games/{gameId}/moves.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.LegalMovesResponse.Moves">
+            <summary>The legal moves for the queried player; empty when it is not their turn or the game is over.</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Responses.MoveResponse">
+            <summary>A single move, used in GET /moves (candidates) and inside game-state history.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.MoveResponse.From">
+            <summary>Source square, 0-based {row, col}.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.MoveResponse.To">
+            <summary>Final landing square, 0-based {row, col}.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.MoveResponse.Path">
+            <summary>Full jump route for multi-captures (empty for quiet moves).</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.MoveResponse.CapturedPieceIds">
+            <summary>Ids of the pieces this move would capture (empty for quiet moves).</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.MoveResponse.Type">
+            <summary>Quiet or Capture.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.MoveResponse.Color">
+            <summary>Moving side: White or Black.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.MoveResponse.Notation">
+            <summary>Board-square notation, e.g. "[31]:[26]" (quiet) or "[46]x[37]x[19]" (capture).</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Responses.PlayerResponse">
+            <summary>A player seated at the table.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.PlayerResponse.Id">
+            <summary>Stable player id used in every request body: 1 = White, 2 = Black.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.PlayerResponse.Name">
+            <summary>Display name chosen at game creation.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.PlayerResponse.Color">
+            <summary>White or Black.</summary>
+        </member>
+        <member name="T:Checkers.Contracts.Responses.SquareResponse">
+            <summary>One board square of the 10x10 grid (100 entries per game state).</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.SquareResponse.Position">
+            <summary>0-based {row, col}; row 0 is Black's back rank, row 9 White's.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.SquareResponse.Number">
+            <summary>Board-square number 1-50 for dark squares (1 = top-left dark), null for light squares.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.SquareResponse.IsDark">
+            <summary>True for the 50 playable dark squares.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.SquareResponse.OccupantId">
+            <summary>Id of the piece standing here, or null when empty.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.SquareResponse.OccupantColor">
+            <summary>Color of the occupant, or null when empty.</summary>
+        </member>
+        <member name="P:Checkers.Contracts.Responses.SquareResponse.OccupantType">
+            <summary>Man or King, or null when empty.</summary>
+        </member>
+        <member name="M:Checkers.Controllers.GamesController.CreateGame(Checkers.Contracts.Requests.CreateGameRequest)">
+            <summary>Starts a new game and returns its full initial state.</summary>
+            <remarks>
+            White is player id 1, Black is player id 2. The response carries the
+            initial board (40 pieces), the turn counter and the Location header
+            pointing at <c>/api/games/{gameId}</c>.
+            </remarks>
+            <param name="request">Player names; only <c>whitePlayerName</c> is required.</param>
+            <response code="201">The created game state.</response>
+            <response code="400">The request body failed validation.</response>
+            <response code="500">The game could not be stored.</response>
+        </member>
+        <member name="M:Checkers.Controllers.GamesController.GetGame(System.String)">
+            <summary>Fetches the current state of a game.</summary>
+            <remarks>Turn counter, side to move, status, players, the 100 squares and the full move history.</remarks>
+            <param name="gameId">The game id returned by POST /api/games.</param>
+            <response code="200">The current game state.</response>
+            <response code="404">No game with that id.</response>
+        </member>
+        <member name="M:Checkers.Controllers.GamesController.GetLegalMoves(System.String,System.Nullable{System.Int32})">
+            <summary>Lists every move the player may legally play right now.</summary>
+            <remarks>
+            Empty list when it is not that player's turn, the game is over, or the
+            position has no legal moves. Captures that can be continued are returned
+            as a single move with the full jump <c>path</c>.
+            </remarks>
+            <param name="gameId">The game to query.</param>
+            <param name="playerId">1 for White, 2 for Black.</param>
+            <response code="200">The legal moves (possibly empty).</response>
+            <response code="400">The playerId query parameter is missing.</response>
+            <response code="404">Unknown game, or the player is not in it.</response>
+        </member>
+        <member name="M:Checkers.Controllers.GamesController.MakeMove(System.String,Checkers.Contracts.Requests.MakeMoveRequest)">
+            <summary>Plays a move for the requesting player.</summary>
+            <remarks>
+            The move is validated against the legal-move list, so multi-jumps
+            travel the full <c>path</c> in one request. A rejected move answers
+            409 with a reason instead of throwing.
+            </remarks>
+            <param name="gameId">The game to play in.</param>
+            <param name="request">Player id plus from/to (and path for multi-jumps).</param>
+            <response code="200">Move applied; body carries the new game status.</response>
+            <response code="400">Malformed input (bad coordinates, wrong shapes).</response>
+            <response code="404">Unknown game or player.</response>
+            <response code="409">Rejected: illegal move, not this player's turn, or game is finished.</response>
+        </member>
+        <member name="M:Checkers.Controllers.GamesController.OfferDraw(System.String,Checkers.Contracts.Requests.OfferDrawRequest)">
+            <summary>Offers a draw on behalf of the player.</summary>
+            <remarks>
+            The first offer records interest and answers <c>success: true</c>;
+            the game only ends in a draw when BOTH players have offered.
+            A duplicate offer answers <c>success: false</c> with HTTP 200.
+            </remarks>
+            <param name="gameId">The game to offer in.</param>
+            <param name="request">The offering player's id.</param>
+            <response code="200">Offer recorded (<c>success: true</c>) or rejected as duplicate (<c>success: false</c>).</response>
+            <response code="400">Malformed input.</response>
+            <response code="404">Unknown game or player.</response>
+        </member>
+        <member name="M:Checkers.Controllers.GamesController.Resign(System.String,Checkers.Contracts.Requests.ResignRequest)">
+            <summary>The player resigns; the opponent wins immediately.</summary>
+            <param name="gameId">The game to resign from.</param>
+            <param name="request">The resigning player's id.</param>
+            <response code="200">Resignation accepted; status flips to the opponent's win.</response>
+            <response code="400">Malformed input.</response>
+            <response code="404">Unknown game or player.</response>
+            <response code="409">The game is already finished.</response>
+        </member>
+        <member name="M:Checkers.Controllers.GamesController.ExceptionResult(System.String,System.Exception)">
+            <summary>
+            Maps an exception that escaped an action to an HTTP response: input
+            errors (out-of-range indexes, bad arguments, malformed values) become
+            400 with the exception message, anything else is logged and answered
+            with a generic 500 so internals never leak. Program.cs keeps the global
+            exception handler as the final safety net outside the controller.
+            </summary>
+        </member>
+        <member name="M:Checkers.Models.GameController.IsSquareEmpty(Checkers.Models.Position)">
+            <summary>True when the position is a playable square with no piece on
+            it (plan phase-5 API used by the tests; bounds-safe).</summary>
+        </member>
+        <member name="M:Checkers.Services.GameFactory.#ctor(Checkers.Models.IBoardFactory,Checkers.Models.IPieceFactory)">
+            <summary>DI constructor: uses the registered singleton factories.</summary>
+        </member>
+        <member name="M:Checkers.Services.GameFactory.#ctor">
+            <summary>Convenience overload for tests and quick setup.</summary>
+        </member>
+    </members>
+</doc>

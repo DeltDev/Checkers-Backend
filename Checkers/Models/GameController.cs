@@ -72,8 +72,6 @@ public class GameController
 
     public void Reset()
     {
-        // Board comes from outside: the factory builds the grid AND places
-        // the starting pieces (via IPieceFactory), never "new Board" here.
         Board = _boardFactory.CreateBoard();
         Turn = 1;
         TurnColor = PieceColor.White;

@@ -10,6 +10,7 @@ namespace Checkers.Controllers;
 
 [ApiController]
 [Route("api/games")]
+[Tags("Games")]
 public class GamesController : ControllerBase
 {
     private readonly IGameProvider _provider;
@@ -21,7 +22,20 @@ public class GamesController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>Starts a new game and returns its full initial state.</summary>
+    /// <remarks>
+    /// White is player id 1, Black is player id 2. The response carries the
+    /// initial board (40 pieces), the turn counter and the Location header
+    /// pointing at <c>/api/games/{gameId}</c>.
+    /// </remarks>
+    /// <param name="request">Player names; only <c>whitePlayerName</c> is required.</param>
+    /// <response code="201">The created game state.</response>
+    /// <response code="400">The request body failed validation.</response>
+    /// <response code="500">The game could not be stored.</response>
     [HttpPost]
+    [ProducesResponseType(typeof(GameStateResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     public ActionResult<GameStateResponse> CreateGame([FromBody] CreateGameRequest request)
     {
         try
@@ -44,7 +58,14 @@ public class GamesController : ControllerBase
         }
     }
 
+    /// <summary>Fetches the current state of a game.</summary>
+    /// <remarks>Turn counter, side to move, status, players, the 100 squares and the full move history.</remarks>
+    /// <param name="gameId">The game id returned by POST /api/games.</param>
+    /// <response code="200">The current game state.</response>
+    /// <response code="404">No game with that id.</response>
     [HttpGet("{gameId}")]
+    [ProducesResponseType(typeof(GameStateResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public ActionResult<GameStateResponse> GetGame(string gameId)
     {
         try
@@ -65,7 +86,21 @@ public class GamesController : ControllerBase
         }
     }
 
+    /// <summary>Lists every move the player may legally play right now.</summary>
+    /// <remarks>
+    /// Empty list when it is not that player's turn, the game is over, or the
+    /// position has no legal moves. Captures that can be continued are returned
+    /// as a single move with the full jump <c>path</c>.
+    /// </remarks>
+    /// <param name="gameId">The game to query.</param>
+    /// <param name="playerId">1 for White, 2 for Black.</param>
+    /// <response code="200">The legal moves (possibly empty).</response>
+    /// <response code="400">The playerId query parameter is missing.</response>
+    /// <response code="404">Unknown game, or the player is not in it.</response>
     [HttpGet("{gameId}/moves")]
+    [ProducesResponseType(typeof(LegalMovesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public ActionResult<LegalMovesResponse> GetLegalMoves(string gameId, [FromQuery] int? playerId)
     {
         try
@@ -101,7 +136,23 @@ public class GamesController : ControllerBase
         }
     }
 
+    /// <summary>Plays a move for the requesting player.</summary>
+    /// <remarks>
+    /// The move is validated against the legal-move list, so multi-jumps
+    /// travel the full <c>path</c> in one request. A rejected move answers
+    /// 409 with a reason instead of throwing.
+    /// </remarks>
+    /// <param name="gameId">The game to play in.</param>
+    /// <param name="request">Player id plus from/to (and path for multi-jumps).</param>
+    /// <response code="200">Move applied; body carries the new game status.</response>
+    /// <response code="400">Malformed input (bad coordinates, wrong shapes).</response>
+    /// <response code="404">Unknown game or player.</response>
+    /// <response code="409">Rejected: illegal move, not this player's turn, or game is finished.</response>
     [HttpPost("{gameId}/moves")]
+    [ProducesResponseType(typeof(ActionResultResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ActionResultResponse), StatusCodes.Status409Conflict)]
     public ActionResult<ActionResultResponse> MakeMove(string gameId, [FromBody] MakeMoveRequest request)
     {
         try
@@ -145,7 +196,21 @@ public class GamesController : ControllerBase
         }
     }
 
+    /// <summary>Offers a draw on behalf of the player.</summary>
+    /// <remarks>
+    /// The first offer records interest and answers <c>success: true</c>;
+    /// the game only ends in a draw when BOTH players have offered.
+    /// A duplicate offer answers <c>success: false</c> with HTTP 200.
+    /// </remarks>
+    /// <param name="gameId">The game to offer in.</param>
+    /// <param name="request">The offering player's id.</param>
+    /// <response code="200">Offer recorded (<c>success: true</c>) or rejected as duplicate (<c>success: false</c>).</response>
+    /// <response code="400">Malformed input.</response>
+    /// <response code="404">Unknown game or player.</response>
     [HttpPost("{gameId}/draw")]
+    [ProducesResponseType(typeof(ActionResultResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public ActionResult<ActionResultResponse> OfferDraw(string gameId, [FromBody] OfferDrawRequest request)
     {
         try
@@ -177,7 +242,18 @@ public class GamesController : ControllerBase
         }
     }
 
+    /// <summary>The player resigns; the opponent wins immediately.</summary>
+    /// <param name="gameId">The game to resign from.</param>
+    /// <param name="request">The resigning player's id.</param>
+    /// <response code="200">Resignation accepted; status flips to the opponent's win.</response>
+    /// <response code="400">Malformed input.</response>
+    /// <response code="404">Unknown game or player.</response>
+    /// <response code="409">The game is already finished.</response>
     [HttpPost("{gameId}/resign")]
+    [ProducesResponseType(typeof(ActionResultResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ActionResultResponse), StatusCodes.Status409Conflict)]
     public ActionResult<ActionResultResponse> Resign(string gameId, [FromBody] ResignRequest request)
     {
         try
