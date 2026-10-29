@@ -4,7 +4,7 @@ using Checkers.Mapping;
 using Checkers.Models;
 using Checkers.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Checkers.Controllers;
 

@@ -229,6 +229,16 @@
             <summary>True when the position is a playable square with no piece on
             it (plan phase-5 API used by the tests; bounds-safe).</summary>
         </member>
+        <member name="M:Checkers.Models.GameController.RaiseOnMoveMade(Checkers.Models.IPlayer,Checkers.Models.Move)">
+            <summary>
+            Notifies every OnMoveMade subscriber. Subscribers are observers, not game
+            rules: a throwing handler is isolated so it cannot fail a move that is
+            already committed, and the handlers registered after it still run.
+            </summary>
+        </member>
+        <member name="M:Checkers.Models.GameController.RaiseOnTurnChanged(System.Int32)">
+            <summary>Same isolation contract as <see cref="M:Checkers.Models.GameController.RaiseOnMoveMade(Checkers.Models.IPlayer,Checkers.Models.Move)"/>.</summary>
+        </member>
         <member name="M:Checkers.Services.GameFactory.#ctor(Checkers.Models.IBoardFactory,Checkers.Models.IPieceFactory)">
             <summary>DI constructor: uses the registered singleton factories.</summary>
         </member>

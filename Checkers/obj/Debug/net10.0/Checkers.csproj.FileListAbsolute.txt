@@ -74,3 +74,13 @@ C:\Users\Lenovo\AppData\Local\Temp\checkers-swagger-verify\Checkers.runtimeconfi
 C:\Users\Lenovo\AppData\Local\Temp\checkers-swagger-verify\Checkers.dll
 C:\Users\Lenovo\AppData\Local\Temp\checkers-swagger-verify\Checkers.pdb
 C:\Users\Lenovo\AppData\Local\Temp\checkers-swagger-verify\Checkers.xml
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Sinks.Console.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Sinks.File.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Microsoft.Extensions.DependencyModel.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.AspNetCore.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Extensions.Hosting.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Extensions.Logging.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Formatting.Compact.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Settings.Configuration.dll
+C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Sinks.Debug.dll

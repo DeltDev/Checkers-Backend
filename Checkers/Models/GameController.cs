@@ -618,6 +618,11 @@ public class GameController
         return string.Join("|", parts);
     }
 
+    /// <summary>
+    /// Notifies every OnMoveMade subscriber. Subscribers are observers, not game
+    /// rules: a throwing handler is isolated so it cannot fail a move that is
+    /// already committed, and the handlers registered after it still run.
+    /// </summary>
     private void RaiseOnMoveMade(IPlayer player, Move move)
     {
         Action<IPlayer, Move>? handlers = OnMoveMade;
@@ -629,10 +634,19 @@ public class GameController
         foreach (var @delegate in handlers.GetInvocationList())
         {
             var handler = (Action<IPlayer, Move>)@delegate;
-            handler(player, move);
+            try
+            {
+                handler(player, move);
+            }
+            catch (Exception)
+            {
+                // Observer failure must not reach the caller, skip the
+                // remaining handlers, or leave the turn unadvanced.
+            }
         }
     }
 
+    /// <summary>Same isolation contract as <see cref="RaiseOnMoveMade"/>.</summary>
     private void RaiseOnTurnChanged(int turn)
     {
         Action<int>? handlers = OnTurnChanged;
@@ -645,7 +659,14 @@ public class GameController
         {
             var handler = (Action<int>)@delegate;
 
-            handler(turn);
+            try
+            {
+                handler(turn);
+            }
+            catch (Exception)
+            {
+                // Observer failure must not reach the caller.
+            }
         }
     }
 
@@ -665,7 +686,14 @@ public class GameController
         foreach (var @delegate in handlers.GetInvocationList())
         {
             var handler = (Action<GameStatus>)@delegate;
-            handler(finalStatus);
+            try
+            {
+                handler(finalStatus);
+            }
+            catch (Exception)
+            {
+                // The game is already over: a broken observer cannot undo that.
+            }
         }
     }
 
@@ -723,12 +751,12 @@ public class GameController
         return count;
     }
     
-    private static bool IsCapture(Move move)
+    public static bool IsCapture(Move move)
     {
         return move.Type == MoveType.Capture;
     }
 
-    private static bool IsPromotion(Move move)
+    public static bool IsPromotion(Move move)
     {
 
         if (move.PieceType != PieceType.Man)
