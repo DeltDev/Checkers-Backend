@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Checkers.Models;
 using Checkers.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -193,6 +194,89 @@ public class ApiConfigurationTests
         Assert.That(raw.Contains("<!DOCTYPE", StringComparison.OrdinalIgnoreCase), Is.False); // never the developer page
         JsonNode body = JsonNode.Parse(raw)!;
         Assert.That(string.IsNullOrWhiteSpace(body["message"]!.GetValue<string>()), Is.False);
+    }
+
+    // ---- D7 (outer layer): an exception that escapes every controller --------
+
+    [Test]
+    public async Task ExceptionEscapingTheController_ReturnsGlobalJson500()
+    {
+        // Sabotage IGameProvider itself: the controller can never be constructed,
+        // so the failure bypasses every controller try/catch and only the global
+        // exception handler in Program.cs can answer. Its response is the bare
+        // {message: "internal server error"} envelope, not MVC problem details.
+        using WebApplicationFactory<Program> hostile = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IGameProvider>(_ => throw new InvalidOperationException("provider unavailable"))));
+        HttpClient client = hostile.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync("/api/games/any");
+
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.InternalServerError));
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/json"));
+
+        string raw = await response.Content.ReadAsStringAsync();
+        JsonNode body = JsonNode.Parse(raw)!;
+        Assert.That(body["message"]!.GetValue<string>(), Is.EqualTo("internal server error"));
+    }
+
+    // ---- CORS policy: the allow-everything branch ----------------------------
+
+    [Test]
+    public void CorsPolicy_WithoutConfiguredOrigins_AllowsAnyOrigin()
+    {
+        string contentRoot = Path.Combine(Path.GetTempPath(), "checkers-cors-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(contentRoot);
+        string? previousOrigin = Environment.GetEnvironmentVariable("Cors__AllowedOrigins");
+        try
+        {
+            // A content root without appsettings.json drops the configured origin
+            // list, and the leftover scalar cannot bind to string[] (Get returns
+            // null), so Program.cs must fall back to Array.Empty and run its
+            // allow-everything branch: the policy echoes ANY origin back.
+            Environment.SetEnvironmentVariable("Cors__AllowedOrigins", "http://configured.test");
+            using WebApplicationFactory<Program> factory = new WebApplicationFactory<Program>()
+                .WithWebHostBuilder(builder => builder.UseSetting(WebHostDefaults.ContentRootKey, contentRoot));
+            HttpClient client = factory.CreateClient();
+
+            HttpRequestMessage request = new(HttpMethod.Get, "/health");
+            request.Headers.Add("Origin", "http://any-origin.test");
+            HttpResponseMessage response = client.SendAsync(request).GetAwaiter().GetResult();
+
+            Assert.That(response.Headers.TryGetValues("Access-Control-Allow-Origin", out IEnumerable<string>? origins), Is.True);
+            Assert.That(string.Join(",", origins!), Is.EqualTo("http://any-origin.test"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("Cors__AllowedOrigins", previousOrigin);
+            try { Directory.Delete(contentRoot, true); } catch (IOException) { }
+        }
+    }
+
+    // ---- top-level catch in Program.cs ---------------------------------------
+
+    [Test]
+    public void StartupFailure_IsSwallowedByTheTopLevelHandler()
+    {
+        string? previousLevel = Environment.GetEnvironmentVariable("Serilog__MinimumLevel__Default");
+        try
+        {
+            // An unparsable minimum level blows up while the host is being built,
+            // inside Program's top-level try. The catch must swallow it and exit
+            // without ever building a host - which the test host reports as an
+            // InvalidOperationException from CreateClient.
+            Environment.SetEnvironmentVariable("Serilog__MinimumLevel__Default", "NotALevel");
+
+            Assert.That(() =>
+            {
+                using WebApplicationFactory<Program> factory = new();
+                factory.CreateClient();
+            }, Throws.InstanceOf<InvalidOperationException>());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("Serilog__MinimumLevel__Default", previousLevel);
+        }
     }
 }
 

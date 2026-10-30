@@ -84,3 +84,12 @@ C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Exte
 C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Formatting.Compact.dll
 C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Settings.Configuration.dll
 C:\Users\Lenovo\Desktop\Checkers-Backend\Checkers\bin\Debug\net10.0\Serilog.Sinks.Debug.dll
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\appsettings.Development.json
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\appsettings.json
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\Checkers.staticwebassets.endpoints.json
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\Checkers.exe
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\Checkers.deps.json
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\Checkers.runtimeconfig.json
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\Checkers.dll
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\Checkers.pdb
+C:\Users\Lenovo\AppData\Local\Temp\cov-baseline\Checkers.xml

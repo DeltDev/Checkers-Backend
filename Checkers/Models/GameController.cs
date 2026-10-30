@@ -24,7 +24,8 @@ public class GameController
     public int Turn { get; private set; }
     public PieceColor TurnColor { get; private set; }
     public GameStatus Status { get; private set; }
-    public IBoard Board { get; private set; }
+    // Always assigned by Reset(), which the constructor calls.
+    public IBoard Board { get; private set; } = null!;
     public List<Move> History { get; private set; } = new();
     public List<IPlayer> DrawOfferedBy { get; } = new();
 

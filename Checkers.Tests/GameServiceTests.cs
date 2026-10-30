@@ -203,5 +203,63 @@ public class GameServiceTests
 
         Assert.Throws<ArgumentException>(() => store.Add("dup", second));
     }
+
+    // ------------------------------------------- id allocation collision paths
+
+    private sealed class SequenceIdGenerator : IGameIdGenerator
+    {
+        private readonly Queue<string> _ids = new();
+        private readonly string _fallback;
+
+        public SequenceIdGenerator(params string[] ids)
+        {
+            foreach (string id in ids)
+            {
+                _ids.Enqueue(id);
+            }
+
+            _fallback = ids[^1];
+        }
+
+        public string NextId() => _ids.Count > 0 ? _ids.Dequeue() : _fallback;
+    }
+
+    private sealed class ConstantIdGenerator : IGameIdGenerator
+    {
+        private readonly string _id;
+
+        public ConstantIdGenerator(string id)
+        {
+            _id = id;
+        }
+
+        public string NextId() => _id;
+    }
+
+    [Test]
+    public void CreateGame_WhenGeneratedIdIsTaken_RetriesWithAFreshId()
+    {
+        InMemoryGameStore store = new();
+        store.Add("dup", new GameFactory().Create(null, null));
+        GameService service = new(store, new GameFactory(), new SequenceIdGenerator("dup", "fresh"));
+
+        string id = service.CreateGame("Alice", "Bob");
+
+        Assert.That(id, Is.EqualTo("fresh"));
+        Assert.That(service.GetGame(id), Is.Not.Null);
+    }
+
+    [Test]
+    public void CreateGame_WhenEveryAttemptCollides_Throws()
+    {
+        InMemoryGameStore store = new();
+        store.Add("dup", new GameFactory().Create(null, null));
+        GameService service = new(store, new GameFactory(), new ConstantIdGenerator("dup"));
+
+        InvalidOperationException? ex = Assert.Throws<InvalidOperationException>(
+            () => service.CreateGame("Alice", "Bob"));
+
+        Assert.That(ex!.Message, Is.EqualTo("cannot allocate a unique game id"));
+    }
 }
 

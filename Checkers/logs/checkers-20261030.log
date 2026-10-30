@@ -1,0 +1,9 @@
+{"@t":"2026-10-30T13:40:29.5857398Z","@mt":"Hosting starting","@l":"Debug","EventId":{"Id":1,"Name":"Starting"},"SourceContext":"Microsoft.Extensions.Hosting.Internal.Host","Application":"Checkers API"}
+{"@t":"2026-10-30T13:40:30.5057914Z","@mt":"Now listening on: {address}","address":"http://localhost:5099","EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime","Application":"Checkers API"}
+{"@t":"2026-10-30T13:40:30.5127786Z","@mt":"Application started. Press Ctrl+C to shut down.","SourceContext":"Microsoft.Hosting.Lifetime","Application":"Checkers API"}
+{"@t":"2026-10-30T13:40:30.5197144Z","@mt":"Hosting environment: {EnvName}","EnvName":"Development","SourceContext":"Microsoft.Hosting.Lifetime","Application":"Checkers API"}
+{"@t":"2026-10-30T13:40:30.5210640Z","@mt":"Content root path: {ContentRoot}","ContentRoot":"C:\\Users\\Lenovo\\Desktop\\Checkers-Backend\\Checkers","SourceContext":"Microsoft.Hosting.Lifetime","Application":"Checkers API"}
+{"@t":"2026-10-30T13:40:30.5225054Z","@mt":"Hosting started","@l":"Debug","EventId":{"Id":2,"Name":"Started"},"SourceContext":"Microsoft.Extensions.Hosting.Internal.Host","Application":"Checkers API"}
+{"@t":"2026-10-30T13:42:56.6570663Z","@mt":"Application is shutting down...","SourceContext":"Microsoft.Hosting.Lifetime","Application":"Checkers API"}
+{"@t":"2026-10-30T13:42:56.6578001Z","@mt":"Hosting stopping","@l":"Debug","EventId":{"Id":3,"Name":"Stopping"},"SourceContext":"Microsoft.Extensions.Hosting.Internal.Host","Application":"Checkers API"}
+{"@t":"2026-10-30T13:42:56.6645314Z","@mt":"Hosting stopped","@l":"Debug","EventId":{"Id":4,"Name":"Stopped"},"SourceContext":"Microsoft.Extensions.Hosting.Internal.Host","Application":"Checkers API"}

@@ -1,16 +1,20 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Checkers.Contracts.Responses;
+
 using Checkers.Models;
 using Checkers.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.OpenApi;
 using Serilog;
+using Serilog.Formatting.Compact;
 
 
+// Bootstrap logger - serialized JSON (CLEF) from the very first line, so even
+// failures before the host is built are machine-readable.
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.File("logs/checkers.log")
+    .WriteTo.Console(new CompactJsonFormatter())
+    .WriteTo.File(new CompactJsonFormatter(), "logs/checkers.log")
     .CreateLogger();
 
 try
@@ -20,10 +24,20 @@ try
     var builder = WebApplication.CreateBuilder(args);
 
   
+    // Serialized (JSON/CLEF) sinks are configured HERE in code. Levels, the
+    // Microsoft/System overrides, FromLogContext enrichment and the static
+    // Application property stay in appsettings.json, picked up by
+    // ReadFrom.Configuration below.
     builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
-        .Enrich.FromLogContext());
+        .Enrich.FromLogContext()
+        .WriteTo.Console(new CompactJsonFormatter())
+        .WriteTo.File(
+            new CompactJsonFormatter(),
+            path: "logs/checkers-.log",
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 14));
 
     builder.Services.AddControllers().AddJsonOptions(options =>
     {
@@ -77,11 +91,14 @@ try
 
     var app = builder.Build();
 
+
     app.UseExceptionHandler(errorApp =>
     {
         errorApp.Run(async context =>
         {
-            Exception? exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+            // The exception handler middleware only invokes this delegate when
+            // IExceptionHandlerFeature is present, so the feature is guaranteed.
+            Exception? exception = context.Features.Get<IExceptionHandlerFeature>()!.Error;
             
             Log.Error(exception, "Unhandled exception while handling {Path}", context.Request.Path);
 
@@ -94,7 +111,7 @@ try
     });
 
    
-    app.UseSerilogRequestLogging();
+    app.UseSerilogRequestLogging(); 
 
     app.UseSwagger();
     app.UseSwaggerUI(options =>
